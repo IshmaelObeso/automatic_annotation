@@ -57,7 +57,7 @@ class Batch_Annotator:
 
         # import pdb; pdb.set_trace()
         # run batch annotator and add read to allow for it to finish before moving on
-        os.popen('..\\RipVent.BatchProcessor.exe ' + self.import_directory + ' ' + self.import_directory + ' ' + self.batch_csv_filepath).read()
+        os.popen('..\\batch_annotator\RipVent.BatchProcessor.exe ' + self.import_directory + ' ' + self.import_directory + ' ' + self.batch_csv_filepath).read()
 
     def delete_csv(self):
 
