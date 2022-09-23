@@ -493,5 +493,5 @@ if __name__ == "__main__":
 
     if not statics_only:
         print(f'Triplets generated at {export_directory}')
-    print(f'Statics file generated at {export_directory}')
+    print(f"Statics file generated at {os.path.join(export_directory, 'statics.csv')}")
 
