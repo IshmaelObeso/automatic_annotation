@@ -20,7 +20,7 @@ class Batch_Annotator:
 
     '''
 
-    def __init__(self, import_directory, export_directory='..\\intermediate_datasets\\batch_outputs'):
+    def __init__(self, import_directory, export_directory='..\\datasets\\batch_outputs'):
 
         # # setup import and export directories
         self.import_directory, self.export_directory = self.setup_directories(import_directory, export_directory)
@@ -45,7 +45,7 @@ class Batch_Annotator:
         # batch annotator expects a blank space in the beginning of csv file so one is created
         batch_csv.insert(0, '')
         # write csv file to current directory for batch annotator to use
-        batch_csv_filepath = '..\\intermediate_datasets\\batch_csv.csv'
+        batch_csv_filepath = '..\\datasets\\batch_outputs\\batch_csv.csv'
         with open(batch_csv_filepath, 'w') as f:
             writer = csv.writer(f)
             writer.writerows(zip(batch_csv))
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     # Command Line Arguments
     p = argparse.ArgumentParser()
     p.add_argument('--input_directory', type=str, default=None, help='Directory with raw unannotated files')
-    p.add_argument('--export_directory', type=str, default='..\\intermediate_datasets\\batch_outputs', help='Directory to export organized unannotated files for later processing')
+    p.add_argument('--export_directory', type=str, default='..\\datasets\\batch_outputs', help='Directory to export organized unannotated files for later processing')
     args = vars(p.parse_args())
 
     # define args
