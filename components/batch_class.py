@@ -6,6 +6,7 @@ from datetime import datetime
 import argparse
 
 
+
 class Batch_Annotator:
     ''' This Class carries out all functions of the batch annotator.
 
@@ -15,17 +16,17 @@ class Batch_Annotator:
                             These files should be unannotated, they will be annotated by the model later in the pipe
 
     Outputs:
-        Export Directory --> String of path to directory where structured files will be placed after going through batch processor.
-                            These files should be unannotated, they will be annotated by the model later in the pipe
+        Batch Annotations --> Directory with annotation files for every patient-day file provided in the import directory
 
     '''
 
-    def __init__(self, import_directory, export_directory):
+    def __init__(self, import_directory, export_directory='..\\intermediate_datasets\\batch_outputs'):
 
         # # setup import and export directories
         self.import_directory, self.export_directory = self.setup_directories(import_directory, export_directory)
 
     def setup_directories(self, import_directory, export_directory):
+
         # strip quotes
         import_directory = import_directory.replace('"', '').replace("'", '')
         export_directory = export_directory.replace('"', '').replace("'", '')
@@ -44,7 +45,7 @@ class Batch_Annotator:
         # batch annotator expects a blank space in the beginning of csv file so one is created
         batch_csv.insert(0, '')
         # write csv file to current directory for batch annotator to use
-        batch_csv_filepath = '.\\batch_csv.csv'
+        batch_csv_filepath = '..\\intermediate_datasets\\batch_csv.csv'
         with open(batch_csv_filepath, 'w') as f:
             writer = csv.writer(f)
             writer.writerows(zip(batch_csv))
@@ -94,7 +95,6 @@ class Batch_Annotator:
             # Make the new subdirectory for this patient day
             new_subdir_absolute_path = os.path.join(self.export_directory, new_subdir)
 
-            # TODO: Wrap in os.path.exists()
             os.mkdir(new_subdir_absolute_path)
 
             # Move the associated files into the subdirectory
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     # Command Line Arguments
     p = argparse.ArgumentParser()
     p.add_argument('--input_directory', type=str, default=None, help='Directory with raw unannotated files')
-    p.add_argument('--export_directory', type=str, default=None, help='Directory to export organized unannotated files for later processing')
+    p.add_argument('--export_directory', type=str, default='..\\intermediate_datasets\\batch_outputs', help='Directory to export organized unannotated files for later processing')
     args = vars(p.parse_args())
 
     # define args
@@ -133,7 +133,7 @@ if __name__ == "__main__":
     export_directory = args['export_directory']
 
     # instantiate batch annotator class
-    Batch_Annotator = Batch_Annotator(input_directory, export_directory)
+    batch_annotator = Batch_Annotator(input_directory, export_directory)
 
     # run batch processor
-    export_directory = Batch_Annotator.batch_process()
+    export_directory = batch_annotator.batch_process()
