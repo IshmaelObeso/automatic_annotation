@@ -9,7 +9,7 @@ import argparse
 import pdb
 from datetime import datetime
 from pathlib import Path
-import utils
+from .utilities import utils
 
 # silence pandas warning
 pd.options.mode.chained_assignment = None
@@ -27,21 +27,21 @@ class Spectral_Triplet_Generator:
 
         '''
 
-    def __init__(self, triplet_directory, spectral_triplet_export_directory="..\\datasets\\spectral_triplets"):
+    def __init__(self, triplet_directory, dataset_directory="..\\datasets\\spectral_triplets"):
 
         # # setup import and export directories
-        self.triplet_directory, self.spectral_triplet_export_directory, self.triplet_statics_path, self.statics_output_path_csv, self.statics_output_path_hdf = self.setup_directories(triplet_directory, spectral_triplet_export_directory)
+        self.triplet_directory, self.spectral_triplet_export_directory, self.triplet_statics_path, self.statics_output_path_csv, self.statics_output_path_hdf = self.setup_directories(triplet_directory, dataset_directory)
 
         # get triplet statics file path
         self.triplet_statics = os.path.join(triplet_directory, 'statics.hdf')
 
-    def setup_directories(self, triplet_directory, spectral_triplet_export_directory):
+    def setup_directories(self, triplet_directory, dataset_directory):
         # strip quotes
         triplet_directory = triplet_directory.replace('"', '').replace("'", '')
-        spectral_triplet_export_directory = spectral_triplet_export_directory.replace('"', '').replace("'", '')
+        dataset_directory = dataset_directory.replace('"', '').replace("'", '')
 
         # make export directory with timestamp
-        spectral_triplet_export_directory = os.path.join(spectral_triplet_export_directory,
+        spectral_triplet_export_directory = os.path.join(dataset_directory, 'spectral_triplets',
                                                 str(datetime.now()).replace(':', '-').replace(' ', ','))
         os.makedirs(spectral_triplet_export_directory)
 
@@ -207,15 +207,15 @@ if __name__ == "__main__":
     # Command Line Arguments
     p = argparse.ArgumentParser()
     p.add_argument('--input_directory', type=str, default=None, help='Directory with raw unannotated files')
-    p.add_argument('--export_directory', type=str, default="..\\datasets\\spectral_triplets", help='Directory to export organized unannotated files for later processing')
+    p.add_argument('--dataset_directory', type=str, default="..\\datasets", help='Directory to export spectral triplets')
     args = vars(p.parse_args())
 
     # define args
     input_directory = args['input_directory']
-    export_directory = args['export_directory']
+    dataset_directory = args['dataset_directory']
 
     # instantiate triplet generator class
-    spectral_triplet_generator = Spectral_Triplet_Generator(input_directory, export_directory)
+    spectral_triplet_generator = Spectral_Triplet_Generator(input_directory, dataset_directory)
 
     # run triplet generator
     export_directory = spectral_triplet_generator.generate_spectral_triplets()

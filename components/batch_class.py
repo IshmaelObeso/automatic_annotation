@@ -20,19 +20,19 @@ class Batch_Annotator:
 
     '''
 
-    def __init__(self, import_directory, export_directory='..\\datasets\\batch_outputs'):
+    def __init__(self, import_directory, dataset_directory='..\\datasets', RipVentBatchAnnotator_filepath = '..\\batch_annotator\RipVent.BatchProcessor.exe'):
 
         # # setup import and export directories
-        self.import_directory, self.export_directory = self.setup_directories(import_directory, export_directory)
-
-    def setup_directories(self, import_directory, export_directory):
+        self.import_directory, self.export_directory = self.setup_directories(import_directory, dataset_directory)
+        self.RipVentBatchAnnotator_filepath = RipVentBatchAnnotator_filepath
+    def setup_directories(self, import_directory, dataset_directory):
 
         # strip quotes
         import_directory = import_directory.replace('"', '').replace("'", '')
-        export_directory = export_directory.replace('"', '').replace("'", '')
+        dataset_directory = dataset_directory.replace('"', '').replace("'", '')
 
         # make export directory with timestamp
-        export_directory = os.path.join(export_directory, str(datetime.now()).replace(':', '-').replace(' ', ','))
+        export_directory = os.path.join(dataset_directory, 'batch_outputs', str(datetime.now()).replace(':', '-').replace(' ', ','))
         os.makedirs(export_directory)
 
         return import_directory, export_directory
@@ -45,7 +45,7 @@ class Batch_Annotator:
         # batch annotator expects a blank space in the beginning of csv file so one is created
         batch_csv.insert(0, '')
         # write csv file to current directory for batch annotator to use
-        batch_csv_filepath = '..\\datasets\\batch_outputs\\batch_csv.csv'
+        batch_csv_filepath = os.path.join(self.export_directory, 'batch_csv.csv')
         with open(batch_csv_filepath, 'w') as f:
             writer = csv.writer(f)
             writer.writerows(zip(batch_csv))
@@ -58,7 +58,7 @@ class Batch_Annotator:
 
         # import pdb; pdb.set_trace()
         # run batch annotator and add read to allow for it to finish before moving on
-        os.popen('..\\batch_annotator\RipVent.BatchProcessor.exe ' + self.import_directory + ' ' + self.import_directory + ' ' + self.batch_csv_filepath).read()
+        os.popen(self.RipVentBatchAnnotator_filepath + ' ' + self.import_directory + ' ' + self.import_directory + ' ' + self.batch_csv_filepath).read()
 
     def delete_csv(self):
 
@@ -125,15 +125,19 @@ if __name__ == "__main__":
     # Command Line Arguments
     p = argparse.ArgumentParser()
     p.add_argument('--input_directory', type=str, default=None, help='Directory with raw unannotated files')
-    p.add_argument('--export_directory', type=str, default='..\\datasets\\batch_outputs', help='Directory to export organized unannotated files for later processing')
+    p.add_argument('--dataset_directory', type=str, default='..\\datasets', help='Directory to export organized unannotated files for later processing')
+    p.add_argument('--batch_annotator_filepath', type=str, default='..\\batch_annotator\RipVent.BatchProcessor.exe', help='Path to vent annotator')
     args = vars(p.parse_args())
 
     # define args
     input_directory = args['input_directory']
-    export_directory = args['export_directory']
+    dataset_directory = args['dataset_directory']
+    batch_annotator_filepath = args['batch_annotator_filepath']
 
     # instantiate batch annotator class
-    batch_annotator = Batch_Annotator(input_directory, export_directory)
+    batch_annotator = Batch_Annotator(input_directory, dataset_directory, batch_annotator_filepath)
 
     # run batch processor
     export_directory = batch_annotator.batch_process()
+
+    print(f'Batch outputs generated at {os.path.abspath(export_directory)}')

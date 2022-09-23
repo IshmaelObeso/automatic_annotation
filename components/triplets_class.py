@@ -5,8 +5,7 @@ import tqdm
 import pandas as pd
 import numpy as np
 import argparse
-import utils
-import deltaPes_utils
+from .utilities import utils, deltaPes_utils
 from datetime import datetime
 
 class Triplet_Generator:
@@ -22,19 +21,19 @@ class Triplet_Generator:
 
         '''
 
-    def __init__(self, batch_files_directory, triplet_export_directory="..\\datasets\\triplets"):
+    def __init__(self, batch_files_directory, dataset_directory="..\\datasets"):
 
         # # setup import and export directories
-        self.batch_files_directory, self.triplet_export_directory, self.statics_output_path_csv, self.statics_output_path_hdf = self.setup_directories(batch_files_directory, triplet_export_directory)
+        self.batch_files_directory, self.triplet_export_directory, self.statics_output_path_csv, self.statics_output_path_hdf = self.setup_directories(batch_files_directory, dataset_directory)
 
 
-    def setup_directories(self, batch_files_directory, triplet_export_directory):
+    def setup_directories(self, batch_files_directory, dataset_directory):
         # strip quotes
         batch_files_directory = batch_files_directory.replace('"', '').replace("'", '')
-        triplet_export_directory = triplet_export_directory.replace('"', '').replace("'", '')
+        dataset_directory = dataset_directory.replace('"', '').replace("'", '')
 
         # make export directory with timestamp
-        triplet_export_directory = os.path.join(triplet_export_directory, str(datetime.now()).replace(':', '-').replace(' ', ','))
+        triplet_export_directory = os.path.join(dataset_directory, 'triplets', str(datetime.now()).replace(':', '-').replace(' ', ','))
         os.makedirs(triplet_export_directory)
 
         # setup statics output path
@@ -288,15 +287,15 @@ if __name__ == "__main__":
     # Command Line Arguments
     p = argparse.ArgumentParser()
     p.add_argument('--input_directory', type=str, default=None, help='Directory with raw unannotated files')
-    p.add_argument('--export_directory', type=str, default="..\\datasets\\triplets", help='Directory to export organized unannotated files for later processing')
+    p.add_argument('--dataset_directory', type=str, default="..\\datasets", help='Directory to export triplet dataset to')
     args = vars(p.parse_args())
 
     # define args
     input_directory = args['input_directory']
-    export_directory = args['export_directory']
+    dataset_directory = args['dataset_directory']
 
     # instantiate triplet generator class
-    triplet_generator = Triplet_Generator(input_directory, export_directory)
+    triplet_generator = Triplet_Generator(input_directory, dataset_directory)
 
     # run triplet generator
     export_directory = triplet_generator.generate_triplets()
