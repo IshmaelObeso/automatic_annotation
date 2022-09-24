@@ -1,0 +1,3 @@
+from __future__ import absolute_import
+
+from scripts import batch_annotate_generate_triplets_and_statics
