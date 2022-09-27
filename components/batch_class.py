@@ -2,6 +2,7 @@ import os
 from shutil import move
 import glob
 import csv
+import tqdm
 from datetime import datetime
 import argparse
 
@@ -80,7 +81,7 @@ class Batch_Annotator:
         export_files.extend([fn for fn in glob.glob(self.import_directory.strip() + "\\*.fit")])
 
         # move these saved files to the export directory
-        for export_file in export_files:
+        for export_file in tqdm.tqdm(export_files):
             move(export_file, self.export_directory.strip() + "\\")
 
     def organize_export_dir(self):
@@ -91,7 +92,7 @@ class Batch_Annotator:
         # Get the unique set of file prefixes
         new_subdir_names = set([name.split('.')[0] for name in unstructured_file_names])
 
-        for new_subdir in new_subdir_names:
+        for new_subdir in tqdm.tqdm(new_subdir_names):
             # Make the new subdirectory for this patient day
             new_subdir_absolute_path = os.path.join(self.export_directory, new_subdir)
 
@@ -109,11 +110,16 @@ class Batch_Annotator:
 
         # put methods together to run batch processor
         self.create_batch_csv()
+        print('Creating Batch Files')
         self.run_batch_processor()
+        print('Batch File Creation Finished')
         self.delete_csv()
+        print('Moving Batch Files to Export dir')
         self.move_files_to_export_dir()
+        print('Batch Files Moved')
+        print('Organizing Batch Files')
         self.organize_export_dir()
-
+        print('Batch Files Organized')
         print('Batch Processing Done!')
 
         # return export directory for ease of use

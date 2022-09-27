@@ -83,6 +83,8 @@ KEEP_COLUMNS = TRIPLET_FILE_ID_COLUMNS + TRAINING_COLUMNS + [DELINEATION_COLUMN]
 
 MERGE_COLUMNS = ['original_subdirectory', 'breath_id']
 
+ERROR_DIRS = ['duplicates', 'invalid']
+
 # constants for spectral triplet generation
 # Sampling frequency (this is from the ventilators themselves, sampling 200 times per second)
 FS = 200

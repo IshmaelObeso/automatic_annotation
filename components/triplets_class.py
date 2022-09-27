@@ -5,7 +5,9 @@ import tqdm
 import pandas as pd
 import numpy as np
 import argparse
+from pathlib import Path
 from .utilities import utils, deltaPes_utils
+from .error_handler import Error_Handler
 from datetime import datetime
 
 class Triplet_Generator:
@@ -211,8 +213,17 @@ class Triplet_Generator:
         all_patient_day_statics.to_csv(self.statics_output_path_csv)
 
     def generate_triplets(self):
-        # Grab all the subdirectories, which contain individual patient days, in the export directory
-        subdir_names = os.listdir(self.batch_files_directory)
+
+        # before anything, check the batch files directory for errors
+        error_handler = Error_Handler()
+        # check for duplicate patient days
+        error_handler.check_for_duplicate_pt_days(self.batch_files_directory)
+        # check for invalid directories
+        error_handler.check_for_invalid_subdirs(self.batch_files_directory)
+
+        # Grab the triplet folders from their directories
+        p = Path(self.batch_files_directory)
+        subdir_names = [subdir.name for subdir in p.iterdir() if subdir.name not in utils.ERROR_DIRS]
 
         # Here's where we'll accumulate all of the individual statics files within the loop
         patient_day_statics_list = []
