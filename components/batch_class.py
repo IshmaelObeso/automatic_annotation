@@ -57,7 +57,6 @@ class Batch_Annotator:
 
     def run_batch_processor(self):
 
-        # import pdb; pdb.set_trace()
         # run batch annotator and add read to allow for it to finish before moving on
         os.popen(self.RipVentBatchAnnotator_filepath + ' ' + self.import_directory + ' ' + self.import_directory + ' ' + self.batch_csv_filepath).read()
 

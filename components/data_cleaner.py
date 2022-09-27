@@ -9,7 +9,7 @@ import shutil
 from .utilities import utils, deltaPes_utils
 from datetime import datetime
 
-class Error_Handler:
+class Data_Cleaner:
     """
     Class that catches and fixes errors in the pipe before they cause issues with the processor classes,
      like the triplets class.

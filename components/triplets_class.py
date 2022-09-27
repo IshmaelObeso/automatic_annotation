@@ -7,7 +7,7 @@ import numpy as np
 import argparse
 from pathlib import Path
 from .utilities import utils, deltaPes_utils
-from .error_handler import Error_Handler
+from .data_cleaner import Data_Cleaner
 from datetime import datetime
 
 class Triplet_Generator:
@@ -215,11 +215,11 @@ class Triplet_Generator:
     def generate_triplets(self):
 
         # before anything, check the batch files directory for errors
-        error_handler = Error_Handler()
-        # check for duplicate patient days
-        error_handler.check_for_duplicate_pt_days(self.batch_files_directory)
+        data_cleaner = Data_Cleaner()
         # check for invalid directories
-        error_handler.check_for_invalid_subdirs(self.batch_files_directory)
+        data_cleaner.check_for_invalid_subdirs(self.batch_files_directory)
+        # check for duplicate patient days
+        data_cleaner.check_for_duplicate_pt_days(self.batch_files_directory)
 
         # Grab the triplet folders from their directories
         p = Path(self.batch_files_directory)
@@ -271,7 +271,7 @@ class Triplet_Generator:
             one_hot_dyssynchronies = utils.one_hot_dyssynchronies(patient_day)
 
             # Loop through each breath
-            for breath_id in range(1, patient_day['breath_id'].max()):
+            for breath_id in tqdm.tqdm(range(1, patient_day['breath_id'].max())):
                 if breath_id not in breath_id_blacklist:
                     # create triplet
                     triplet, triplet_csv_filename = self.build_triplet(patient_day,

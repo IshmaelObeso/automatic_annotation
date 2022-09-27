@@ -27,7 +27,7 @@ class Spectral_Triplet_Generator:
 
         '''
 
-    def __init__(self, triplet_directory, dataset_directory="..\\datasets\\spectral_triplets"):
+    def __init__(self, triplet_directory, dataset_directory="..\\datasets"):
 
         # # setup import and export directories
         self.triplet_directory, self.spectral_triplet_export_directory, self.triplet_statics_path, self.statics_output_path_csv, self.statics_output_path_hdf = self.setup_directories(triplet_directory, dataset_directory)
@@ -214,10 +214,10 @@ if __name__ == "__main__":
     input_directory = args['input_directory']
     dataset_directory = args['dataset_directory']
 
-    # instantiate triplet generator class
+    # instantiate spectral triplet generator class
     spectral_triplet_generator = Spectral_Triplet_Generator(input_directory, dataset_directory)
 
-    # run triplet generator
+    # run spectral triplet generator
     export_directory = spectral_triplet_generator.generate_spectral_triplets()
     statics_csv_output = spectral_triplet_generator.statics_output_path_csv
 
