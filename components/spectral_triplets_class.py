@@ -49,8 +49,8 @@ class Spectral_Triplet_Generator:
         triplet_statics_path = os.path.join(triplet_directory, 'statics.hdf')
 
         # setup statics output path
-        statics_output_path_csv = os.path.join(spectral_triplet_export_directory, 'statics_spectral.hdf')
-        statics_output_path_hdf = os.path.join(spectral_triplet_export_directory, 'statics_spectral.csv')
+        statics_output_path_csv = os.path.join(spectral_triplet_export_directory, 'statics_spectral.csv')
+        statics_output_path_hdf = os.path.join(spectral_triplet_export_directory, 'statics_spectral.hdf')
 
         return triplet_directory,\
                spectral_triplet_export_directory,\
