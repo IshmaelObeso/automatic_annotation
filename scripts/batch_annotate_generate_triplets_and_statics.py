@@ -36,14 +36,14 @@ if __name__ == "__main__":
     p.add_argument('--input_directory', type=str, default=None, help='Directory with raw unannotated files')
     p.add_argument('--dataset_directory', type=str, default='\\datasets',
                    help='Directory to export datasets to')
-    p.add_argument('--vent_annotator_filepath', type=str, default='.\\batch_annotator\RipVent.BatchProcessor.exe',
+    p.add_argument('--batch_processor_exe_filepath', type=str, default='.\\batch_annotator\RipVent.BatchProcessor.exe',
                    help='Path to vent annotator')
     args = vars(p.parse_args())
 
     # define args
     input_directory = args['input_directory']
     dataset_directory = args['dataset_directory']
-    vent_annotator_filepath = args['vent_annotator_filepath']
+    vent_annotator_filepath = args['batch_processor_exe_filepath']
 
     # run main
     main(input_directory, dataset_directory, vent_annotator_filepath)

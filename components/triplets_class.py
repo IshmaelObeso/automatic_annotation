@@ -237,7 +237,7 @@ class Triplet_Generator:
         print(f'Creating CSVs from {len(subdir_names)} subdirectories of patient-days...')
 
         # Loop through each subdirectory
-        for subdir_name in tqdm.tqdm(subdir_names):
+        for subdir_name in tqdm.tqdm(subdir_names, desc='Patient-Days Processed'):
 
             # get the patient day and set up patient_day directories
             patient_id, day_id, patient_day_dir, patient_day_output_dir, patient_day = self.get_patient_day(subdir_name)
@@ -271,7 +271,7 @@ class Triplet_Generator:
             one_hot_dyssynchronies = utils.one_hot_dyssynchronies(patient_day)
 
             # Loop through each breath
-            for breath_id in tqdm.tqdm(range(1, patient_day['breath_id'].max())):
+            for breath_id in tqdm.tqdm(range(1, patient_day['breath_id'].max()), desc='Breaths in Patient-Day Processed'):
                 if breath_id not in breath_id_blacklist:
                     # create triplet
                     triplet, triplet_csv_filename = self.build_triplet(patient_day,

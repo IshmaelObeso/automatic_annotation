@@ -180,12 +180,12 @@ class Spectral_Triplet_Generator:
 
         print(f'Creating spectrogram tensors from {len(subdir_names)} subdirectories of breath triplets...')
 
-        for subdir_name in tqdm.tqdm(subdir_names):
+        for subdir_name in tqdm.tqdm(subdir_names, desc='Patient-Days Processed'):
 
             # setup spectral triplet directories and get list of files
             triplet_subdir, spectral_triplet_subdir, triplet_csv_file_names = self.setup_spectral_directories(subdir_name)
 
-            for triplet_csv_file_name in triplet_csv_file_names:
+            for triplet_csv_file_name in tqdm.tqdm(triplet_csv_file_names, desc='Triplets in Patient-day Processed'):
 
                 # initialize spectral triplet
                 triplet, triplet_id, spectral_tensor, tensor_and_truth = self.initialize_spectral_triplet(triplet_subdir, triplet_csv_file_name)

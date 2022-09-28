@@ -6,8 +6,10 @@ sys.path.append('..')
 
 from components import batch_class, triplets_class, spectral_triplets_class
 
+# This script creates spectral triplets from raw REDVENT files
 # This script will run the batch annotator on raw patient-day files, organize them into output directories,
 # Then it will run the triplet generator on the organized batch outputs, generate triplet directories and a statics file
+# Then it will run the spectral triplet generator on the triplets directory, generate spectral triplets directories and a spectral triplets statics file
 
 def main(input_directory, dataset_directory='\\datasets', vent_annotator_filepath='.\\batch_annotator\RipVent.BatchProcessor.exe'):
 
@@ -26,8 +28,6 @@ def main(input_directory, dataset_directory='\\datasets', vent_annotator_filepat
 
     print(f'Triplets generated at {os.path.abspath(export_directory)}')
     print(f"Statics file generated at {os.path.abspath(statics_csv_output)}")
-
-    # run spectral triplet generator
 
     # instantiate spectral triplet generator class
     spectral_triplet_generator = spectral_triplets_class.Spectral_Triplet_Generator(export_directory, dataset_directory)
@@ -49,14 +49,14 @@ if __name__ == "__main__":
     p.add_argument('--input_directory', type=str, default=None, help='Directory with raw unannotated files')
     p.add_argument('--dataset_directory', type=str, default='\\datasets',
                    help='Directory to export datasets to')
-    p.add_argument('--vent_annotator_filepath', type=str, default='.\\batch_annotator\RipVent.BatchProcessor.exe',
+    p.add_argument('--batch_processor_exe_filepath', type=str, default='.\\batch_annotator\RipVent.BatchProcessor.exe',
                    help='Path to vent annotator')
     args = vars(p.parse_args())
 
     # define args
     input_directory = args['input_directory']
     dataset_directory = args['dataset_directory']
-    vent_annotator_filepath = args['vent_annotator_filepath']
+    vent_annotator_filepath = args['batch_processor_exe_filepath']
 
     # run main
     main(input_directory, dataset_directory, vent_annotator_filepath)

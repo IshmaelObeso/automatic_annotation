@@ -80,7 +80,7 @@ class Batch_Annotator:
         export_files.extend([fn for fn in glob.glob(self.import_directory.strip() + "\\*.fit")])
 
         # move these saved files to the export directory
-        for export_file in tqdm.tqdm(export_files):
+        for export_file in tqdm.tqdm(export_files, desc='Files Moved'):
             move(export_file, self.export_directory.strip() + "\\")
 
     def organize_export_dir(self):
@@ -91,7 +91,7 @@ class Batch_Annotator:
         # Get the unique set of file prefixes
         new_subdir_names = set([name.split('.')[0] for name in unstructured_file_names])
 
-        for new_subdir in tqdm.tqdm(new_subdir_names):
+        for new_subdir in tqdm.tqdm(new_subdir_names, desc='Files Organized'):
             # Make the new subdirectory for this patient day
             new_subdir_absolute_path = os.path.join(self.export_directory, new_subdir)
 
