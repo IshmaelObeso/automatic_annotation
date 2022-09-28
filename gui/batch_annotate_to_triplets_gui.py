@@ -11,7 +11,7 @@ import sys
 
 sys.path.append('..')
 
-from scripts import batch_annotate_generate_triplets_and_statics
+from scripts import batch_annotate_to_triplets
 
 
 # set color of gui
