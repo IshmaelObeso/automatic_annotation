@@ -72,7 +72,7 @@ Label(root, text="Generate Triplets and Statics",font=('helvetica 13')).pack(pad
 # export_entry = entries[1].get()
 
 button1 = tk.Button(text='Click me to Batch Annotate', command=lambda:
-     batch_annotate_generate_triplets_and_statics.main(entries[0].get(), entries[1].get()), bg='brown', fg='white').pack()
+     batch_annotate_to_triplets.main(entries[0].get(), entries[1].get()), bg='brown', fg='white').pack()
 
 # create a window for our button so it'll always fit no matter how many inputs we create
 canvas1.create_window(200, 180, window=button1)
