@@ -59,24 +59,30 @@ class Data_Cleaner:
         # after looping through all directories, check if any pt_days have multiple subdirectories assigned
         multi_pt_days = {k: v for (k, v) in pt_day_dict.items() if len(pt_day_dict[k]) > 1}
 
-        # move all duplicate subdirectories to duplicates directory
-        # setup duplicates subdir
-        duplicates_subdir = os.path.join(directory, 'duplicates')
-        if not os.path.exists(duplicates_subdir):
-            os.mkdir(duplicates_subdir)
+        num_duplicates = len(multi_pt_days.keys())
+        # if duplicates are found
+        if num_duplicates > 0:
+            # move all duplicate subdirectories to duplicates directory
+            # setup duplicates subdir if duplicates are found
+            duplicates_subdir = os.path.join(directory, 'duplicates')
 
-        # loop through all subdirectories that need to be moved
-        for subdirs in multi_pt_days.values():
+            if not os.path.exists(duplicates_subdir):
+                os.mkdir(duplicates_subdir)
 
-            # loop through all subdirectories
-            for subdir in subdirs:
-                subdir_path = os.path.join(directory, subdir)
-                duplicates_path = os.path.join(duplicates_subdir, subdir)
-                shutil.move(subdir_path, duplicates_path)
+            # loop through all subdirectories that need to be moved
+            for subdirs in multi_pt_days.values():
+
+                # loop through all subdirectories
+                for subdir in subdirs:
+                    subdir_path = os.path.join(directory, subdir)
+                    duplicates_path = os.path.join(duplicates_subdir, subdir)
+                    shutil.move(subdir_path, duplicates_path)
 
 
-        # print that duplicates were found, and which ones
-        print(f'{len(multi_pt_days.keys())} Duplicate patient days found! Moved to {duplicates_subdir}')
+            # print that duplicates were found, and which ones
+            print(f'{num_duplicates} Duplicate patient days found! Moved to {duplicates_subdir}')
+        else:
+            print('No Duplicate Patient Days Found!')
 
 
 
@@ -110,18 +116,24 @@ class Data_Cleaner:
             except:
                 invalid_subdirs.append(subdir_name)
 
-        # after looping, move all invalid subdirectories into invalid directory
-        # setup invalid subdir
-        invalid_dir = os.path.join(directory, 'invalid')
-        if not os.path.exists(invalid_dir):
-            os.mkdir(invalid_dir)
+        num_invalid = len(invalid_subdirs)
+        # if invalid patient days are found
+        if num_invalid > 0 :
+            # after looping, move all invalid subdirectories into invalid directory
+            # setup invalid subdir
+            invalid_dir = os.path.join(directory, 'invalid')
+            if not os.path.exists(invalid_dir):
+                os.mkdir(invalid_dir)
 
-        # loop through all subdirectories that need to be moved
-        for invalid_subdir in invalid_subdirs:
+            # loop through all subdirectories that need to be moved
+            for invalid_subdir in invalid_subdirs:
 
-            orig_invalid_subdir_path = os.path.join(directory, invalid_subdir)
-            new_invalid_subdir_path = os.path.join(invalid_dir, invalid_subdir)
-            shutil.move(orig_invalid_subdir_path, new_invalid_subdir_path)
+                orig_invalid_subdir_path = os.path.join(directory, invalid_subdir)
+                new_invalid_subdir_path = os.path.join(invalid_dir, invalid_subdir)
+                shutil.move(orig_invalid_subdir_path, new_invalid_subdir_path)
 
-        # print that duplicats were found, and which ones
-        print(f'{len(invalid_subdirs)} patient days with no TriggersAndArtifacts File found! Moved to {invalid_dir}')
+            # print that duplicats were found, and which ones
+            print(f'{num_invalid} patient days with no TriggersAndArtifacts File found! Moved to {invalid_dir}')
+         # else do nothing and print
+        else:
+            print('No patient days without TriggerAndArtifacts File Found!')

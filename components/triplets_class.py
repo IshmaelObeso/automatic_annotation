@@ -271,7 +271,7 @@ class Triplet_Generator:
             one_hot_dyssynchronies = utils.one_hot_dyssynchronies(patient_day)
 
             # Loop through each breath
-            for breath_id in tqdm.tqdm(range(1, patient_day['breath_id'].max()), desc='Breaths in Patient-Day Processed'):
+            for breath_id in tqdm.tqdm(range(1, patient_day['breath_id'].max()), desc=f'Breaths in Patient {patient_id} Day {day_id} Processed'):
                 if breath_id not in breath_id_blacklist:
                     # create triplet
                     triplet, triplet_csv_filename = self.build_triplet(patient_day,
