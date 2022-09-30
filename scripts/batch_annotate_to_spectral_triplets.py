@@ -39,9 +39,6 @@ def main(input_directory, dataset_directory='\\datasets', vent_annotator_filepat
     print(f'Spectral Triplets generated at {os.path.abspath(export_directory)}')
     print(f"Statics file generated at {os.path.abspath(statics_csv_output)}")
 
-
-
-# if running this file directly, only do batch processing
 if __name__ == "__main__":
 
     # Command Line Arguments

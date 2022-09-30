@@ -163,6 +163,7 @@ class Spectral_Triplet_Generator:
         # The breaths that have spectral triplets have been flagged and the rest should be 0
         statics['has_spectral_triplet'] = statics['has_spectral_triplet'].fillna(0)
 
+        import pdb; pdb.set_trace()
         # Write the statics file
         statics.to_hdf(self.statics_output_path_hdf, key='statics')
         statics.to_csv(self.statics_output_path_csv)
