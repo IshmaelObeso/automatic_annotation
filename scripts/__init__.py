@@ -1,3 +1,3 @@
 from __future__ import absolute_import
 
-from scripts import batch_annotate_to_triplets, batch_annotate_to_spectral_triplets
+from scripts import batch_process_to_triplets, batch_process_to_spectral_triplets

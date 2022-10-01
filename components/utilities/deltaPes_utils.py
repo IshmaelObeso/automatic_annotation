@@ -99,7 +99,7 @@ def calculate_deltaPes(breath_filepath, inspiration_surround_s=.1, expiration_su
     esophogeal_manometry_column = 's:Pes'
 
     # extract breath info
-    patient, day, breath = extract_breath_info(breath_filepath)
+    patient, day, breath = extract_breath_info(str(breath_filepath))
 
     # convert timerel column to datetime for calculations
     triplet['TimeRel'] = pd.to_datetime(triplet['TimeRel'])

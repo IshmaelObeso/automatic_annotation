@@ -1,19 +1,21 @@
-import pandas as pd
-from components import prediction_data_pipe
 
-dataset = r"C:\Users\gobes\Documents\Unannoted_Exports\spectral_triplets\2022-09-29,20-08-31.129178"
-data_class = prediction_data_pipe.Data_Pipe(dataset)
+from components import predictions_generator, annotated_dataset_generator
 
-all_uids = data_class.get_uids()
-example_uid = all_uids[0]
+raw_files_directory = r"C:\Users\gobes\Documents\raw_files_only"
 
-# test gettitem
-xs, ys, ts, uid = data_class.__getitem__(example_uid)
+dataset = r"C:\Users\gobes\Documents\Unannotated_Raw_Exports\2022-09-30,15-12-50.135596\spectral_triplets"
 
-# test getitem for every uid
-for uid in all_uids:
+model_directory = r"C:\Users\gobes\PycharmProjects\automatic_annotation\models"
 
-    xs, ys, ts, uid = data_class.__getitem__(uid)
+# instantiate prediction generator
+predictions_generator = predictions_generator.Prediction_Generator(dataset, model_directory)
 
+# get predictions
+preds = predictions_generator.get_predictions()
 
-    print(uid)
+# try to use annotation generator
+annotation_generator = annotated_dataset_generator.Annotated_Dataset_Generator(raw_files_directory, dataset, preds)
+
+annotation_generator.create_art_files()
+
+import pdb; pdb.set_trace()

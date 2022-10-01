@@ -1,15 +1,8 @@
 import pandas as pd
 import numpy as np
-from scipy import signal
 
-import os
-import pickle
-import tqdm
-import argparse
-from datetime import datetime
-from pathlib import Path
 from .utilities.transforms import ChopDatBreathRightOnUp
-
+from pathlib import Path
 
 class Data_Pipe:
     """
@@ -61,12 +54,11 @@ class Data_Pipe:
 
     def setup_directories(self, spectral_triplets_directory):
 
-        # strip quotes
-        spectral_triplets_directory = spectral_triplets_directory.replace('"', '').replace("'", '')
-
+        # define path
+        spectral_triplets_directory = Path(spectral_triplets_directory)
 
         # get the spectral triplet statics file path
-        spectral_triplets_statics = os.path.join(spectral_triplets_directory, 'statics_spectral.hdf')
+        spectral_triplets_statics = Path(spectral_triplets_directory, 'spectral_statics.hdf')
 
         return spectral_triplets_directory, spectral_triplets_statics
 
@@ -80,8 +72,8 @@ class Data_Pipe:
         for uid in spectral_triplets_statics.index:
             uid_dir = self.uid2dir[uid]
             breath_no = uid[2]
-            pickle_path = os.path.join(self.spectral_triplets_directory, uid_dir, 'breath_%d.pickle' % breath_no)
-            if os.path.exists(pickle_path):
+            pickle_path = Path(self.spectral_triplets_directory, uid_dir, 'breath_%d.pickle' % breath_no)
+            if pickle_path.exists():
                 all_uids_pickle.append(uid)
 
         # turn self.all_uids_pickle to index object
@@ -130,7 +122,7 @@ class Data_Pipe:
 
         # read pickle file (!! WARNING !! assumes directory structure is consistent...)
         breath_no = uid[2]
-        pickle_path = os.path.join(self.spectral_triplets_directory, uid_dir, 'breath_%d.pickle' % breath_no)
+        pickle_path = Path(self.spectral_triplets_directory, uid_dir, f'breath_{breath_no}.pickle')
         data = pd.read_pickle(pickle_path)
 
         # access x, y pairs

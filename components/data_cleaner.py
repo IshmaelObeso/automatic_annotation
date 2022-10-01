@@ -64,18 +64,17 @@ class Data_Cleaner:
         if num_duplicates > 0:
             # move all duplicate subdirectories to duplicates directory
             # setup duplicates subdir if duplicates are found
-            duplicates_subdir = os.path.join(directory, 'duplicates')
+            duplicates_subdir = Path(directory, 'duplicates')
 
-            if not os.path.exists(duplicates_subdir):
-                os.mkdir(duplicates_subdir)
+            duplicates_subdir.mkdir(parents=True, exist_ok=True)
 
             # loop through all subdirectories that need to be moved
             for subdirs in multi_pt_days.values():
 
                 # loop through all subdirectories
                 for subdir in subdirs:
-                    subdir_path = os.path.join(directory, subdir)
-                    duplicates_path = os.path.join(duplicates_subdir, subdir)
+                    subdir_path = Path(directory, subdir)
+                    duplicates_path = Path(duplicates_subdir, subdir)
                     shutil.move(subdir_path, duplicates_path)
 
 
@@ -106,7 +105,9 @@ class Data_Cleaner:
         for subdir_name in tqdm.tqdm(subdir_names):
 
             # get all files in subdirectory
-            subdir_files = os.listdir(os.path.join(directory, subdir_name))
+            subdir_path = Path(directory, subdir_name)
+            subdir_files = [x.name for x in subdir_path.iterdir() if x.is_file()]
+
 
             # look for a TriggersandArtifacts file
             try:
@@ -121,15 +122,14 @@ class Data_Cleaner:
         if num_invalid > 0 :
             # after looping, move all invalid subdirectories into invalid directory
             # setup invalid subdir
-            invalid_dir = os.path.join(directory, 'invalid')
-            if not os.path.exists(invalid_dir):
-                os.mkdir(invalid_dir)
+            invalid_dir = Path(directory, 'invalid')
+            invalid_dir.mkdir(parents=True, exist_ok=True)
 
             # loop through all subdirectories that need to be moved
             for invalid_subdir in invalid_subdirs:
 
-                orig_invalid_subdir_path = os.path.join(directory, invalid_subdir)
-                new_invalid_subdir_path = os.path.join(invalid_dir, invalid_subdir)
+                orig_invalid_subdir_path = Path(directory, invalid_subdir)
+                new_invalid_subdir_path = Path(invalid_dir, invalid_subdir)
                 shutil.move(orig_invalid_subdir_path, new_invalid_subdir_path)
 
             # print that duplicats were found, and which ones
