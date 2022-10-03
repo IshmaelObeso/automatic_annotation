@@ -1,17 +1,48 @@
 import tqdm
 import pandas as pd
 import numpy as np
+from pathlib import Path
 from components import prediction_data_pipe, annotation_model
 
 
 class Prediction_Generator:
 
-    def __init__(self, spectral_dataset_directory, model_directory='..\\models' ):
+    def __init__(self, spectral_triplet_directory, model_directory='..\\models' ):
+
+        # setup directories
+        self.spectral_triplet_directory, self.predictions_export_directory, self.predictions_output_path_csv, self.predictions_output_path_hdf = self.setup_directories(spectral_triplet_directory)
 
         #instantiate dataset and model classes
-        self.data_class = prediction_data_pipe.Data_Pipe(spectral_dataset_directory)
+        self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory)
 
         self.model = annotation_model.Annotation_Model(model_directory)
+
+    def setup_directories(self, spectral_triplet_directory):
+
+        # define paths
+        spectral_triplet_directory = Path(spectral_triplet_directory)
+
+        # put preds df in the parent directory of the spectral triplets directory
+        spectral_triplets_parent_directory = spectral_triplet_directory.parents[0]
+        predictions_export_directory = Path(spectral_triplets_parent_directory, 'predictions')
+
+        predictions_export_directory.mkdir(parents=True, exist_ok=True)
+
+        # setup predictions dataframe filepath
+        predictions_output_path_csv = Path(predictions_export_directory, 'predictions.csv')
+        predictions_output_path_hdf = Path(predictions_export_directory, 'predictions.hdf')
+
+        return spectral_triplet_directory.resolve(),\
+               predictions_export_directory.resolve(),\
+               predictions_output_path_csv.resolve(),\
+               predictions_output_path_hdf.resolve()
+
+    def save_predictions(self, predictions_df):
+        """ saves the raw predictions dataframe into csv and hdf """
+
+        # Write the statics file
+        predictions_df.to_hdf(self.predictions_output_path_hdf, key='statics')
+        predictions_df.to_csv(self.predictions_output_path_csv)
 
     def get_predictions(self):
         """ get predictions for every spectral triplet in dataset, predictions will be output as hdf file"""
@@ -71,4 +102,8 @@ class Prediction_Generator:
 
         preds_df = preds_df.set_index(['patient_id', 'day_id', 'breath_id'])
 
-        return preds_df
+        # save the predictions dataframe
+        self.save_predictions(preds_df)
+
+        return self.predictions_export_directory
+

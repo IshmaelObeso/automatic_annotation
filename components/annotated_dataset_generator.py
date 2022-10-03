@@ -9,13 +9,13 @@ class Annotated_Dataset_Generator:
      files with their corresponding annotations inside an artifact file"""
 
 
-    def __init__(self, raw_files_directory, spectral_triplets_directory, predictions_df):
+    def __init__(self, raw_files_directory, spectral_triplets_directory, predictions_export_directory):
 
         # setup directories
         self.annotated_dataset_directory, self.raw_files_directory, self.spectral_triplets_directory, self.spectral_statics_filepath = self.setup_directories(raw_files_directory, spectral_triplets_directory)
 
-        # save predictions dataframe
-        self.predictions_df = predictions_df
+        # load the predictions dataframe
+        self.predictions_df = self.load_predictions_dataframe(predictions_export_directory)
 
     def setup_directories(self, raw_files_directory, spectral_triplets_directory):
 
@@ -36,6 +36,21 @@ class Annotated_Dataset_Generator:
                raw_files_directory.resolve(),\
                spectral_triplets_directory.resolve(),\
                spectral_statics_filepath.resolve()
+
+    def load_predictions_dataframe(self, predictions_export_directory):
+        """ load the predictions dataframe from the csv of predictions and sets up indexes"""
+
+        predictions_csv_filepath = Path(predictions_export_directory, 'predictions.csv')
+
+        predictions_df = pd.read_csv(predictions_csv_filepath)
+
+        # convert columns to string
+        predictions_df[['patient_id', 'day_id']] = predictions_df[['patient_id', 'day_id']].astype(str)
+        # set index for statics
+        predictions_df = predictions_df.set_index(['patient_id', 'day_id', 'breath_id'])
+
+        return predictions_df
+
     def get_breath_times(self):
 
         """ gets start and expiration times of breaths with associated predictions """
@@ -43,7 +58,7 @@ class Annotated_Dataset_Generator:
         # load spectral statics file
         spectral_statics = pd.read_csv(self.spectral_statics_filepath)
         # convert columns to string
-        spectral_statics[['patient_id', 'day_id']] =  spectral_statics[['patient_id', 'day_id']].astype(str)
+        spectral_statics[['patient_id', 'day_id']] = spectral_statics[['patient_id', 'day_id']].astype(str)
         # set index for statics
         spectral_statics = spectral_statics.set_index(['patient_id', 'day_id', 'breath_id'])
 

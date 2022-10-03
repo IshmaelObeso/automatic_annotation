@@ -47,10 +47,10 @@ def main(input_directory, dataset_directory='\\datasets', vent_annotator_filepat
     prediction_generator = predictions_generator.Prediction_Generator(spectra_triplets_directory, model_directory)
 
     # get predictions
-    predictions = prediction_generator.get_predictions()
+    predictions_export_directory = prediction_generator.get_predictions()
 
     # try to use annotation generator
-    annotation_generator = annotated_dataset_generator.Annotated_Dataset_Generator(input_directory, spectra_triplets_directory, predictions)
+    annotation_generator = annotated_dataset_generator.Annotated_Dataset_Generator(input_directory, spectra_triplets_directory, predictions_export_directory)
 
     annotation_generator.create_art_files()
 
