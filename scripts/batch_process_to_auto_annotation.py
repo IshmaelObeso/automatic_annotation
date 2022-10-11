@@ -41,10 +41,9 @@ def main(input_directory, dataset_directory='\\datasets', vent_annotator_filepat
     print(f'Spectral Triplets generated at {os.path.abspath(spectra_triplets_directory)}')
     print(f"Spectral Statics file generated at {os.path.abspath(statics_csv_output)}")
 
-    model_directory = r"C:\Users\gobes\PycharmProjects\automatic_annotation\models"
 
     # instantiate prediction generator
-    prediction_generator = predictions_generator.Prediction_Generator(spectra_triplets_directory, model_directory)
+    prediction_generator = predictions_generator.Prediction_Generator(spectra_triplets_directory)
 
     # get predictions
     predictions_export_directory = prediction_generator.get_predictions()

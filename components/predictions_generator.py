@@ -7,7 +7,7 @@ from components import prediction_data_pipe, annotation_model
 
 class Prediction_Generator:
 
-    def __init__(self, spectral_triplet_directory, model_directory='..\\models' ):
+    def __init__(self, spectral_triplet_directory, model_directory='.\\models' ):
 
         # setup directories
         self.spectral_triplet_directory, self.predictions_export_directory, self.predictions_output_path_csv, self.predictions_output_path_hdf = self.setup_directories(spectral_triplet_directory)

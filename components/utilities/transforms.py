@@ -28,13 +28,13 @@ class ChopDatBreathRightOnUp:
 
     def forward(self, xs, ys, ts, uid):
 
-        # Get the indices of all of the non-nan y values
+        # Get the indices of all the non-nan y values
         non_nan_ys = np.where(~np.isnan(ys))[0]
 
         # If we're left justifying, take the first index of the middle breath (and offset it)
         if self.justification == 'left':
             start_idx = non_nan_ys[0] - self.offset
-
+        lenx = len(xs)
         # If we're center justifying, find the center index of the middle
         # breath, calculate the start index and offset it
         if self.justification == 'center':
