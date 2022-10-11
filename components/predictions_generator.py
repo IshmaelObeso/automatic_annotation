@@ -52,6 +52,9 @@ class Prediction_Generator:
 
         # get model attributes
         input_name, input_shape, output_name = self.model.get_model_attributes()
+        # set batch_size to 1
+        input_shape[0] = 1
+
 
         # test getitem for every uid
         preds_list = []

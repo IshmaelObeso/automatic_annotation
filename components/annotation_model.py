@@ -24,6 +24,7 @@ class Annotation_Model:
         # we will use the dc model for now, later update class to take arguments to use either dc or multitarget model
         model_path = os.path.join(self.model_directory, 'dc_model.onnx')
 
+        rt.set_seed(3)
         self.session = rt.InferenceSession(model_path)
 
 
