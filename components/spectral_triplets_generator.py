@@ -191,7 +191,7 @@ class Spectral_Triplet_Generator:
                 triplet, triplet_id, spectral_tensor, tensor_and_truth = self.initialize_spectral_triplet(triplet_subdir, triplet_csv_file_name)
 
                 # create spectral triplet and save to pkl file
-                self.create_spectral_triplet(triplet, spectral_tensor, has_spectral_triplet, subdir_name, triplet_id)
+                triplet, spectral_tensor, has_spectral_triplet = self.create_spectral_triplet(triplet, spectral_tensor, has_spectral_triplet, subdir_name, triplet_id)
 
                 # save spectral triplet to pickle file
                 self.save_spectral_triplet(tensor_and_truth, triplet, spectral_tensor, spectral_triplet_subdir, triplet_csv_file_name)

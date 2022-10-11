@@ -92,6 +92,8 @@ class Data_Pipe:
         # instantiate transform classes
         spectral_transformer = ChopDatBreathRightOnUp(self.justification, self.max_length, self.offset)
 
+
+
         # apply any transforms
         xs, ys, ts, uids = spectral_transformer.forward(xs, ys, ts, uid)
 
