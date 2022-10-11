@@ -9,13 +9,16 @@ class Annotated_Dataset_Generator:
      files with their corresponding annotations inside an artifact file"""
 
 
-    def __init__(self, raw_files_directory, spectral_triplets_directory, predictions_export_directory):
+    def __init__(self, raw_files_directory, spectral_triplets_directory, predictions_export_directory, threshold=.804):
 
         # setup directories
         self.annotated_dataset_directory, self.raw_files_directory, self.spectral_triplets_directory, self.spectral_statics_filepath = self.setup_directories(raw_files_directory, spectral_triplets_directory)
 
         # load the predictions dataframe
         self.predictions_df = self.load_predictions_dataframe(predictions_export_directory)
+
+        # set threshold for predictions
+        self.threshold = threshold
 
     def setup_directories(self, raw_files_directory, spectral_triplets_directory):
 
@@ -84,7 +87,7 @@ class Annotated_Dataset_Generator:
         """ Use a threshold to get binarized predictions for every breath"""
 
         threshold_df = self.predictions_df.copy()
-        threshold_df['prediction'] = (threshold_df['prediction'] >= .804).astype(int)
+        threshold_df['prediction'] = (threshold_df['prediction'] >= self.threshold).astype(int)
 
         return threshold_df
 

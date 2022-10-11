@@ -1,5 +1,6 @@
 import onnxruntime as rt
 import os
+from pathlib import Path
 
 class Annotation_Model:
     """
@@ -14,7 +15,7 @@ class Annotation_Model:
     def setup_directories(self, model_directory):
 
         # strip quotes
-        model_directory = model_directory.replace('"', '').replace("'", '')
+        model_directory = Path(model_directory)
 
         return model_directory
 
