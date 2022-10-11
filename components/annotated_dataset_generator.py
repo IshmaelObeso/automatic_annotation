@@ -177,12 +177,12 @@ class Annotated_Dataset_Generator:
                     begin = pt_day_preds.loc[index]['start_time']
                     end = pt_day_preds.loc[index]['end_time']
                     # signal is SpirometryFlow for Double Trigger
-                    signal = 'SpirometryFlow'
+                    signal = 'AirwayPressure'
                     # code is 107 for Double Trigger
                     code = '107'
 
                     # also Ben wants to include Otherdyssynchrony in airway pressure channel whenever we log a Double Trigger
-                    other_signal = 'AirwayPressure'
+                    other_signal = 'SpirometryFlow'
                     other_code = '1'
 
                     # write the lines
