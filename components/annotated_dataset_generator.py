@@ -82,15 +82,6 @@ class Annotated_Dataset_Generator:
         self.predictions_df = pd.concat([self.predictions_df, spectral_statics], axis=1)
 
 
-    def threshold_predictions(self):
-
-        """ Use a threshold to get binarized predictions for every breath"""
-
-        threshold_df = self.predictions_df.copy()
-        threshold_df['prediction'] = (threshold_df['prediction'] >= self.threshold).astype(int)
-
-        return threshold_df
-
     def copy_raw_files(self):
 
         """ Copies raw files from raw files directory to annotated dataset directory,

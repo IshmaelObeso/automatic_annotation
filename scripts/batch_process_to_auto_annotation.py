@@ -4,7 +4,7 @@ import sys
 
 sys.path.append('..')
 
-from components import batch_annotation_generator, triplets_generator, spectral_triplets_generator, predictions_generator, annotated_dataset_generator
+from components import batch_annotation_generator, triplets_generator, spectral_triplets_generator, predictions_generator, annotation_model, annotated_dataset_generator
 
 # This script creates annotations from raw REDVENT files
 # This script will run the batch annotator on raw patient-day files, organize them into output directories,
@@ -45,11 +45,22 @@ def main(input_directory, dataset_directory='\\datasets', vent_annotator_filepat
     # instantiate prediction generator
     prediction_generator = predictions_generator.Prediction_Generator(spectra_triplets_directory)
 
-    # get predictions
-    predictions_export_directory = prediction_generator.get_predictions()
+    # instantiate dc model
+    dc_model_path = '.\\models\\dc_model.onnx'
+    dc_model = annotation_model.Annotation_Model(dc_model_path)
+
+    # instantiate multitarget model
+    multitarget_model_path = '.\\models\\mt_model.onnx'
+    multitarget_model = annotation_model.Annotation_Model(multitarget_model_path)
+
+    # get predictions for dc model
+    predictions_export_directory = prediction_generator.get_predictions(dc_model, threshold)
+
+    # get predictions for multitarget model
+
 
     # try to use annotation generator
-    annotation_generator = annotated_dataset_generator.Annotated_Dataset_Generator(input_directory, spectra_triplets_directory, predictions_export_directory, threshold)
+    annotation_generator = annotated_dataset_generator.Annotated_Dataset_Generator(input_directory, spectra_triplets_directory, predictions_export_directory)
 
     annotation_generator.create_art_files()
 

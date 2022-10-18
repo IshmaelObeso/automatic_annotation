@@ -22,3 +22,12 @@ INSTALLING REQUIRED PACKAGES
     
 -- Installation with Conda
     ``` conda env create -f environment.yml```
+
+
+INSTALLING REQUIRED PACKAGES
+
+-- Installation with Pip
+    ``` pip install -r requirements.txt ```
+    
+-- Installation with Conda
+    ``` conda env create -f environment.yml```

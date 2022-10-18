@@ -2,20 +2,20 @@ import tqdm
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from components import prediction_data_pipe, annotation_model
+from components import prediction_data_pipe
 
 
 class Prediction_Generator:
 
-    def __init__(self, spectral_triplet_directory, model_directory='.\\models' ):
+    def __init__(self, spectral_triplet_directory):
 
         # setup directories
         self.spectral_triplet_directory, self.predictions_export_directory, self.predictions_output_path_csv, self.predictions_output_path_hdf = self.setup_directories(spectral_triplet_directory)
 
-        #instantiate dataset and model classes
+        #instantiate dataset
         self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory)
 
-        self.model = annotation_model.Annotation_Model(model_directory)
+
 
     def setup_directories(self, spectral_triplet_directory):
 
@@ -37,6 +37,15 @@ class Prediction_Generator:
                predictions_output_path_csv.resolve(),\
                predictions_output_path_hdf.resolve()
 
+    def threshold_predictions(self, threshold, predictions_df):
+
+        """ Use a threshold to get binarized predictions for every breath"""
+
+        threshold_df = self.predictions_df
+        threshold_df['prediction'] = (threshold_df['prediction'] >= self.threshold).astype(int)
+
+        return threshold_df
+
     def save_predictions(self, predictions_df):
         """ saves the raw predictions dataframe into csv and hdf """
 
@@ -44,14 +53,11 @@ class Prediction_Generator:
         predictions_df.to_hdf(self.predictions_output_path_hdf, key='statics')
         predictions_df.to_csv(self.predictions_output_path_csv)
 
-    def get_predictions(self):
+    def get_predictions(self, model, threshold):
         """ get predictions for every spectral triplet in dataset, predictions will be output as hdf file"""
 
-        # load model session
-        self.model.load_model()
-
         # get model attributes
-        input_name, input_shape, output_name = self.model.get_model_attributes()
+        input_name, input_shape, output_name = model.get_model_attributes()
         # set batch_size to 1
         input_shape[0] = 1
 
@@ -76,7 +82,7 @@ class Prediction_Generator:
             xs = np.reshape(xs, input_shape)
 
             # get prediction
-            pred = self.model.session.run([output_name], {input_name: xs.astype(np.float32)})
+            pred = model.session.run([output_name], {input_name: xs.astype(np.float32)})
             # get prediction as a singular array
             pred = pred[0][0]
 
@@ -104,6 +110,9 @@ class Prediction_Generator:
         preds_df = pd.concat([df, preds_df], axis=1)
 
         preds_df = preds_df.set_index(['patient_id', 'day_id', 'breath_id'])
+
+        # threshold predictions df
+        self.threshold_predictions(preds_df, threshold)
 
         # save the predictions dataframe
         self.save_predictions(preds_df)
