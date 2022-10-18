@@ -37,11 +37,11 @@ class Prediction_Generator:
                predictions_output_path_csv.resolve(),\
                predictions_output_path_hdf.resolve()
 
-    def threshold_predictions(self, threshold, predictions_df):
+    def threshold_predictions(self, predictions_df, threshold):
 
         """ Use a threshold to get binarized predictions for every breath"""
 
-        threshold_df = self.predictions_df
+        threshold_df = predictions_df
         threshold_df['prediction'] = (threshold_df['prediction'] >= self.threshold).astype(int)
 
         return threshold_df

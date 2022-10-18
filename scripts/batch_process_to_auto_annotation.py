@@ -50,14 +50,14 @@ def main(input_directory, dataset_directory='\\datasets', vent_annotator_filepat
     dc_model = annotation_model.Annotation_Model(dc_model_path)
 
     # instantiate multitarget model
-    multitarget_model_path = '.\\models\\mt_model.onnx'
-    multitarget_model = annotation_model.Annotation_Model(multitarget_model_path)
+    # multitarget_model_path = '.\\models\\mt_model.onnx'
+    # multitarget_model = annotation_model.Annotation_Model(multitarget_model_path)
 
     # get predictions for dc model
     predictions_export_directory = prediction_generator.get_predictions(dc_model, threshold)
 
     # get predictions for multitarget model
-
+    # predictions_export_directory = prediction_generator.get_predictions(multitarget_model, threshold)
 
     # try to use annotation generator
     annotation_generator = annotated_dataset_generator.Annotated_Dataset_Generator(input_directory, spectra_triplets_directory, predictions_export_directory)
