@@ -42,7 +42,7 @@ class Prediction_Generator:
         """ Use a threshold to get binarized predictions for every breath"""
 
         threshold_df = predictions_df
-        threshold_df['prediction'] = (threshold_df['prediction'] >= self.threshold).astype(int)
+        threshold_df['prediction'] = (threshold_df['prediction'] >= threshold).astype(int)
 
         return threshold_df
 

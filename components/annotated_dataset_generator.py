@@ -9,16 +9,13 @@ class Annotated_Dataset_Generator:
      files with their corresponding annotations inside an artifact file"""
 
 
-    def __init__(self, raw_files_directory, spectral_triplets_directory, predictions_export_directory, threshold=.804):
+    def __init__(self, raw_files_directory, spectral_triplets_directory, predictions_export_directory):
 
         # setup directories
         self.annotated_dataset_directory, self.raw_files_directory, self.spectral_triplets_directory, self.spectral_statics_filepath = self.setup_directories(raw_files_directory, spectral_triplets_directory)
 
         # load the predictions dataframe
         self.predictions_df = self.load_predictions_dataframe(predictions_export_directory)
-
-        # set threshold for predictions
-        self.threshold = threshold
 
     def setup_directories(self, raw_files_directory, spectral_triplets_directory):
 
@@ -132,11 +129,6 @@ class Annotated_Dataset_Generator:
         # merge breath times into the predictions dataframe
         self.get_breath_times()
 
-        # get a predictions df with thresholded preds
-        threshold_df = self.threshold_predictions()
-
-
-
         # for every patient day we have predictions for
         for patient_day_file in patient_day_files_with_predictions:
 
@@ -150,7 +142,7 @@ class Annotated_Dataset_Generator:
             pt_day = (patient_id, day_id)
 
             # get the predictions from that patient day
-            pt_day_preds = threshold_df.loc[pt_day]
+            pt_day_preds = self.predictions_df.loc[pt_day]
 
             # get rows where there was a dyssynchrony
             pt_day_preds_dyssynchrony_index =pt_day_preds[pt_day_preds['prediction'] == 1].index
