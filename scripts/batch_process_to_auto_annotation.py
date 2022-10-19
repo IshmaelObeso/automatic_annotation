@@ -42,22 +42,25 @@ def main(input_directory, dataset_directory='\\datasets', vent_annotator_filepat
     print(f"Spectral Statics file generated at {os.path.abspath(statics_csv_output)}")
 
 
-    # instantiate prediction generator
-    prediction_generator = predictions_generator.Prediction_Generator(spectral_triplets_directory)
+    # instantiate binary prediction generator
+    binary_prediction_generator = predictions_generator.BinaryPredictionGenerator(spectral_triplets_directory)
+
+    # instantiate multitarget prediction generator
+    multitarget_prediction_generator = predictions_generator.MultitargetPredictionGenerator(spectral_triplets_directory)
 
     # instantiate dc model
     dc_model_path = '.\\models\\dc_model.onnx'
     dc_model = annotation_model.Annotation_Model(dc_model_path)
 
     # instantiate multitarget model
-    # multitarget_model_path = '.\\models\\mt_model.onnx'
-    # multitarget_model = annotation_model.Annotation_Model(multitarget_model_path)
+    multitarget_model_path = '.\\models\\mt_model.onnx'
+    multitarget_model = annotation_model.Annotation_Model(multitarget_model_path)
 
     # get predictions for dc model
-    predictions_export_directory = prediction_generator.get_predictions(dc_model, threshold)
+    predictions_export_directory = binary_prediction_generator.get_predictions(dc_model, threshold)
 
     # get predictions for multitarget model
-    # predictions_export_directory = prediction_generator.get_predictions(multitarget_model, threshold)
+    predictions_export_directory = multitarget_prediction_generator.get_predictions(multitarget_model, threshold)
 
     # try to use annotation generator
     annotation_generator = annotated_dataset_generator.Annotated_Dataset_Generator(input_directory, spectral_triplets_directory, predictions_export_directory)
