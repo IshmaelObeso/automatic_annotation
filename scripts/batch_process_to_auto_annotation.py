@@ -4,7 +4,9 @@ import sys
 
 sys.path.append('..')
 
-from components import batch_annotation_generator, triplets_generator, spectral_triplets_generator, predictions_generator, annotation_model, annotated_dataset_generator
+from components.dataset_generation import batch_annotation_generator, spectral_triplets_generator, triplets_generator
+from components.annotation_generation import annotated_dataset_generator, annotation_model, predictions_generator
+
 
 # This script creates annotations from raw REDVENT files
 # This script will run the batch annotator on raw patient-day files, organize them into output directories,
@@ -13,7 +15,14 @@ from components import batch_annotation_generator, triplets_generator, spectral_
 # Then it will predict on every spectral triplet generated
 # Then it will output those predictions to a directory with the raw files
 
-def main(input_directory, dataset_directory='\\datasets', vent_annotator_filepath='.\\batch_annotator\RipVent.BatchProcessor.exe', binary_threshold=.804, multitarget_thresholds=[.001, 1.14e-05]):
+def main(
+         input_directory, dataset_directory='\\datasets',
+         vent_annotator_filepath='.\\batch_annotator\RipVent.BatchProcessor.exe',
+         binary_threshold=.804,
+         multitarget_thresholds=[.001, 1.14e-05],
+         generate_triplets_and_statics=True,
+         generate_annotations=True
+         ):
 
     # instantiate batch annotator class
     batch_annotator = batch_annotation_generator.Batch_Annotator(input_directory, dataset_directory, vent_annotator_filepath)
@@ -21,56 +30,59 @@ def main(input_directory, dataset_directory='\\datasets', vent_annotator_filepat
     # run batch annotator, save the directory it exports the batch annotations to
     export_directory = batch_annotator.batch_process()
 
-    # instantiate triplet generator class
-    triplet_generator = triplets_generator.Triplet_Generator(export_directory)
+    if generate_triplets_and_statics:
 
-    # run triplet generator
-    export_directory = triplet_generator.generate_triplets()
-    statics_csv_output = triplet_generator.statics_output_path_csv
+        # instantiate triplet generator class
+        triplet_generator = triplets_generator.Triplet_Generator(export_directory)
 
-    print(f'Triplets generated at {os.path.abspath(export_directory)}')
-    print(f"Statics file generated at {os.path.abspath(statics_csv_output)}")
+        # run triplet generator
+        export_directory = triplet_generator.generate_triplets()
+        statics_csv_output = triplet_generator.statics_output_path_csv
 
-    # instantiate spectral triplet generator class
-    spectral_triplet_generator = spectral_triplets_generator.Spectral_Triplet_Generator(export_directory)
+        print(f'Triplets generated at {os.path.abspath(export_directory)}')
+        print(f"Statics file generated at {os.path.abspath(statics_csv_output)}")
 
-    # run spectral triplet generator
-    spectral_triplets_directory = spectral_triplet_generator.generate_spectral_triplets()
-    statics_csv_output = spectral_triplet_generator.statics_output_path_csv
+        # instantiate spectral triplet generator class
+        spectral_triplet_generator = spectral_triplets_generator.Spectral_Triplet_Generator(export_directory)
 
-    print(f'Spectral Triplets generated at {os.path.abspath(spectral_triplets_directory)}')
-    print(f"Spectral Statics file generated at {os.path.abspath(statics_csv_output)}")
+        # run spectral triplet generator
+        spectral_triplets_directory = spectral_triplet_generator.generate_spectral_triplets()
+        statics_csv_output = spectral_triplet_generator.statics_output_path_csv
 
+        print(f'Spectral Triplets generated at {os.path.abspath(spectral_triplets_directory)}')
+        print(f"Spectral Statics file generated at {os.path.abspath(statics_csv_output)}")
 
-    # instantiate binary prediction generator
-    binary_prediction_generator = predictions_generator.BinaryPredictionGenerator(spectral_triplets_directory)
+        if generate_annotations:
 
-    # instantiate multitarget prediction generator
-    multitarget_prediction_generator = predictions_generator.MultitargetPredictionGenerator(spectral_triplets_directory)
+            # instantiate binary prediction generator
+            binary_prediction_generator = predictions_generator.BinaryPredictionGenerator(spectral_triplets_directory)
 
-    # instantiate dc model
-    dc_model_path = '.\\models\\dc_model.onnx'
-    dc_model = annotation_model.Annotation_Model(dc_model_path)
+            # instantiate multitarget prediction generator
+            multitarget_prediction_generator = predictions_generator.MultitargetPredictionGenerator(spectral_triplets_directory)
 
-    # instantiate multitarget model
-    multitarget_model_path = '.\\models\\mt_model.onnx'
-    multitarget_model = annotation_model.Annotation_Model(multitarget_model_path)
+            # instantiate dc model
+            dc_model_path = '.\\models\\dc_model.onnx'
+            dc_model = annotation_model.Annotation_Model(dc_model_path)
 
-    # get predictions for dc model
-    binary_preds_df = binary_prediction_generator.get_predictions(dc_model, binary_threshold)
+            # instantiate multitarget model
+            multitarget_model_path = '.\\models\\mt_model.onnx'
+            multitarget_model = annotation_model.Annotation_Model(multitarget_model_path)
 
-    # get predictions for multitarget model
-    multitarget_preds_df = multitarget_prediction_generator.get_predictions(multitarget_model, multitarget_thresholds)
+            # get predictions for dc model
+            binary_preds_df = binary_prediction_generator.get_predictions(dc_model, binary_threshold)
 
-    # instantiate annotated dataset generator
-    annotation_generator = annotated_dataset_generator.AnnotatedDatasetGenerator(raw_files_directory=input_directory, spectral_triplets_directory=spectral_triplets_directory)
+            # get predictions for multitarget model
+            multitarget_preds_df = multitarget_prediction_generator.get_predictions(multitarget_model, multitarget_thresholds)
 
-    # create artifact file from binary predictions
-    annotation_generator.create_art_files(binary_preds_df, multitarget_preds_df)
+            # instantiate annotated dataset generator
+            annotation_generator = annotated_dataset_generator.AnnotatedDatasetGenerator(raw_files_directory=input_directory, spectral_triplets_directory=spectral_triplets_directory)
 
-    # add multitarget predictions to artifact files
+            # create artifact file from binary predictions
+            annotation_generator.create_art_files(binary_preds_df, multitarget_preds_df)
 
-    print(f'Annotated Dataset Created at {annotation_generator.annotated_dataset_directory}')
+            # add multitarget predictions to artifact files
+
+            print(f'Annotated Dataset Created at {annotation_generator.annotated_dataset_directory}')
 
 if __name__ == "__main__":
 
@@ -81,6 +93,8 @@ if __name__ == "__main__":
                    help='Directory to export datasets to')
     p.add_argument('--batch_processor_exe_filepath', type=str, default='.\\batch_annotator\RipVent.BatchProcessor.exe',
                    help='Path to vent annotator')
+    p.add_argument('--generate_triplets_and_statics', type=bool, default=True)
+    p.add_argument('--generate_annotations', type=bool, default=True)
     p.add_argument('--binary_threshold', type=float, default=.804)
     p.add_argument('--multitarget_thresholds', help='[reverse_trigger_threshold, inadequate_support_threshold]', type=list, default=[.25, 3.3e-01])
     args = vars(p.parse_args())
@@ -92,6 +106,21 @@ if __name__ == "__main__":
     binary_threshold = args['binary_threshold']
     multitarget_thresholds = args['multitarget_thresholds']
 
+    generate_triplets_and_statics = args['generate_triplets_and_statics']
+    generate_annotations = args['generate_annotations']
+
+    # if generate_annotations is true, then generate_triplets_and_statics must also be true
+    if generate_annotations:
+        generate_triplets_and_statics = True
+
     # run main
-    main(input_directory, dataset_directory, vent_annotator_filepath, binary_threshold, multitarget_thresholds)
+    main(
+        input_directory,
+        dataset_directory,
+        vent_annotator_filepath,
+        binary_threshold,
+        multitarget_thresholds,
+        generate_triplets_and_statics,
+        generate_annotations
+    )
 

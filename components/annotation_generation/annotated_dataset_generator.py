@@ -1,6 +1,6 @@
 import pandas as pd
 import shutil
-from .utilities import utils
+from components.dataset_generation.utilities import utils
 from pathlib import Path
 
 class AnnotatedDatasetGenerator:

@@ -6,7 +6,7 @@ import pickle
 import tqdm
 import argparse
 from pathlib import Path
-from .utilities import utils
+from components.dataset_generation.utilities import utils
 
 # silence pandas warning
 pd.options.mode.chained_assignment = None

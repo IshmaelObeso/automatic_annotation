@@ -2,7 +2,7 @@ import tqdm
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from components import prediction_data_pipe
+from components.annotation_generation import prediction_data_pipe
 
 
 class BinaryPredictionGenerator:

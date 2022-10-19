@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 
-from .utilities.transforms import ChopDatBreathRightOnUp
+from components.annotation_generation.utilities.transforms import ChopDatBreathRightOnUp
 from pathlib import Path
 
 class Data_Pipe:

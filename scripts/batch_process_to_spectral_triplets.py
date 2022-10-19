@@ -4,7 +4,8 @@ import sys
 
 sys.path.append('..')
 
-from components import batch_annotation_generator, triplets_generator, spectral_triplets_generator
+from components.dataset_generation import batch_annotation_generator, spectral_triplets_generator, triplets_generator
+
 
 # This script creates spectral triplets from raw REDVENT files
 # This script will run the batch annotator on raw patient-day files, organize them into output directories,

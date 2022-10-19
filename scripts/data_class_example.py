@@ -1,5 +1,4 @@
-
-from components import predictions_generator, annotated_dataset_generator
+from components.annotation_generation import annotated_dataset_generator, predictions_generator
 
 raw_files_directory = r"C:\Users\gobes\Documents\raw_files_only"
 
