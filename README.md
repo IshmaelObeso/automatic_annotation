@@ -11,8 +11,8 @@ You can run these scripts one of two ways
              ``` run scripts/name_of_script_to_run --import directory PATH_TO_UNANNOTATED_FILES --dataset_directory PATH_TO_DIRECTORY_TO_STORE_OUTPUT_DATASETS ```
               
   - GUI-Based: If you want to run these scripts from the command line, but input arguments from a GUI, run the scripts like this
-             ``` run gui/name_of_gui_to_run ```
-               Then use the Gui to define the paths to the import directory and datset directories
+             ``` run gui/batch_process_to_auto_annotation ```
+               Then use the Gui to define the paths to the import directory and dataset directories
 
 
 INSTALLING REQUIRED PACKAGES
