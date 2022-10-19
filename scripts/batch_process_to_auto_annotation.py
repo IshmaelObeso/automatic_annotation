@@ -16,16 +16,27 @@ from components.annotation_generation import annotated_dataset_generator, annota
 # Then it will output those predictions to a directory with the raw files
 
 def main(
-         input_directory, dataset_directory='\\datasets',
+         import_directory,
+        export_directory ='\\datasets',
          vent_annotator_filepath='.\\batch_annotator\RipVent.BatchProcessor.exe',
          binary_threshold=.804,
-         multitarget_thresholds=[.001, 1.14e-05],
+         multitarget_thresholds=[.25, 3.3e-01],
          generate_triplets_and_statics=True,
          generate_annotations=True
          ):
 
+    # if generate_annotations is true, then generate_triplets_and_statics must also be true
+    if (generate_annotations is True) and (generate_triplets_and_statics is False):
+
+        generate_triplets_and_statics = True
+
+        print('Generating triplets and statics must happen before generating Annotations. \n Generate Annotations set to True.')
+
+    assert import_directory is not None, 'Import Directory must exist '
+    assert export_directory is not None, 'Export Directory must exist'
+
     # instantiate batch annotator class
-    batch_annotator = batch_annotation_generator.Batch_Annotator(input_directory, dataset_directory, vent_annotator_filepath)
+    batch_annotator = batch_annotation_generator.Batch_Annotator(import_directory, export_directory, vent_annotator_filepath)
 
     # run batch annotator, save the directory it exports the batch annotations to
     export_directory = batch_annotator.batch_process()
@@ -75,7 +86,7 @@ def main(
             multitarget_preds_df = multitarget_prediction_generator.get_predictions(multitarget_model, multitarget_thresholds)
 
             # instantiate annotated dataset generator
-            annotation_generator = annotated_dataset_generator.AnnotatedDatasetGenerator(raw_files_directory=input_directory, spectral_triplets_directory=spectral_triplets_directory)
+            annotation_generator = annotated_dataset_generator.AnnotatedDatasetGenerator(raw_files_directory=import_directory, spectral_triplets_directory=spectral_triplets_directory)
 
             # create artifact file from binary predictions
             annotation_generator.create_art_files(binary_preds_df, multitarget_preds_df)
@@ -88,8 +99,8 @@ if __name__ == "__main__":
 
     # Command Line Arguments
     p = argparse.ArgumentParser()
-    p.add_argument('--input_directory', type=str, default=None, help='Directory with raw unannotated files')
-    p.add_argument('--dataset_directory', type=str, default='\\datasets',
+    p.add_argument('--import_directory', type=str, default=None, help='Directory with raw unannotated files')
+    p.add_argument('--export_directory', type=str, default='\\datasets',
                    help='Directory to export datasets to')
     p.add_argument('--batch_processor_exe_filepath', type=str, default='.\\batch_annotator\RipVent.BatchProcessor.exe',
                    help='Path to vent annotator')
@@ -100,8 +111,8 @@ if __name__ == "__main__":
     args = vars(p.parse_args())
 
     # define args
-    input_directory = args['input_directory']
-    dataset_directory = args['dataset_directory']
+    import_directory = args['import_directory']
+    export_directory = args['export_directory']
     vent_annotator_filepath = args['batch_processor_exe_filepath']
     binary_threshold = args['binary_threshold']
     multitarget_thresholds = args['multitarget_thresholds']
@@ -109,14 +120,10 @@ if __name__ == "__main__":
     generate_triplets_and_statics = args['generate_triplets_and_statics']
     generate_annotations = args['generate_annotations']
 
-    # if generate_annotations is true, then generate_triplets_and_statics must also be true
-    if generate_annotations:
-        generate_triplets_and_statics = True
-
     # run main
     main(
-        input_directory,
-        dataset_directory,
+        import_directory,
+        export_directory,
         vent_annotator_filepath,
         binary_threshold,
         multitarget_thresholds,

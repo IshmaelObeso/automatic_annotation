@@ -40,10 +40,9 @@ class BinaryPredictionGenerator:
 
         """ Use a threshold to get binarized predictions for every breath"""
 
-        threshold_df = predictions_df
-        threshold_df['prediction'] = (threshold_df['prediction'] >= threshold).astype(int)
+        predictions_df['prediction'] = (predictions_df['prediction'] >= threshold).astype(int)
 
-        return threshold_df
+        return predictions_df
 
     def save_predictions(self, predictions_df):
         """ saves the raw predictions dataframe into csv and hdf """
@@ -165,7 +164,7 @@ class MultitargetPredictionGenerator:
         predictions_df.to_hdf(self.predictions_output_path_hdf, key='statics')
         predictions_df.to_csv(self.predictions_output_path_csv)
 
-    def get_predictions(self, model, threshold):
+    def get_predictions(self, model, thresholds):
         """ get predictions for every spectral triplet in dataset, predictions will be output as hdf file"""
 
         # get model attributes
@@ -224,7 +223,7 @@ class MultitargetPredictionGenerator:
         preds_df = preds_df.set_index(['patient_id', 'day_id', 'breath_id'])
 
         # threshold predictions df
-        self.threshold_predictions(preds_df, threshold)
+        self.threshold_predictions(preds_df, thresholds)
 
         # save the predictions dataframe
         self.save_predictions(preds_df)

@@ -20,23 +20,22 @@ class Batch_Annotator:
 
     '''
 
-    def __init__(self, import_directory, dataset_directory='..\\datasets', RipVentBatchAnnotator_filepath = '..\\batch_annotator\RipVent.BatchProcessor.exe'):
+    def __init__(self, import_directory, export_directory='..\\datasets', RipVentBatchAnnotator_filepath = '..\\batch_annotator\RipVent.BatchProcessor.exe'):
 
         # # setup import and export directories
-        self.import_directory, self.export_directory = self.setup_directories(import_directory, dataset_directory)
-        self.RipVentBatchAnnotator_filepath = Path(RipVentBatchAnnotator_filepath).resolve()
-    def setup_directories(self, import_directory, dataset_directory):
+        self.import_directory, self.export_directory, self.RipVentBatchAnnotator_filepath = self.setup_directories(import_directory, export_directory, RipVentBatchAnnotator_filepath)
+    def setup_directories(self, import_directory, export_directory, exe_path):
 
         # define paths
         import_directory = Path(import_directory.replace('"', '').replace("'", ''))
-        dataset_directory = Path(dataset_directory.replace('"', '').replace("'", ''))
+        export_directory = Path(export_directory.replace('"', '').replace("'", ''))
+        exe_path = Path(exe_path.replace('"', '').replace("'", ''))
 
         # make export directory with timestamp
-        export_directory = Path(dataset_directory, str(datetime.now()).replace(':', '-').replace(' ', ','), 'batch_outputs')
-        # import pdb; pdb.set_trace()
+        export_directory = Path(export_directory, str(datetime.now()).replace(':', '-').replace(' ', ','), 'batch_outputs')
         export_directory.mkdir(parents=True, exist_ok=True)
 
-        return import_directory.resolve(), export_directory.resolve()
+        return import_directory.resolve(), export_directory.resolve(), exe_path.resolve()
 
     def create_batch_csv(self):
 
