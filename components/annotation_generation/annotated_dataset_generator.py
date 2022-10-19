@@ -191,23 +191,38 @@ class AnnotatedDatasetGenerator:
 
                         # get the reverse trigger prediction for the breath with the Double Trigger
                         reverse_trigger_prediction = multitarget_patient_day_preds.loc[index]['Double Trigger Reverse Trigger_pred']
+                        reverse_trigger_prediction_thresholded = multitarget_patient_day_preds.loc[index]['Double Trigger Reverse Trigger_threshold']
 
                         # get the inadequate support prediction for the breath with the Double Trigger
                         inadequate_support_prediction = multitarget_patient_day_preds.loc[index]['Double Trigger Inadequate Support_pred']
+                        inadequate_support_prediction_thresholded = multitarget_patient_day_preds.loc[index]['Double Trigger Inadequate Support_threshold']
 
                         # find out which one is larger, if they are both the same, the annotation should be 'Other' because we don't know which of the two it is
                         # if prediction is reverse trigger
-                        if reverse_trigger_prediction > inadequate_support_prediction:
+                        if reverse_trigger_prediction_thresholded > inadequate_support_prediction_thresholded:
                             # reverse trigger code is
                             other_code = '114'
 
-                        elif inadequate_support_prediction > reverse_trigger_prediction:
+                        elif inadequate_support_prediction_thresholded > reverse_trigger_prediction_thresholded:
                             # TODO: train underlying doubletrigger_all model in order to actually differentiate the parts of inadequate support
                             # inadequate support code doesn't exist :(
                             other_code = '113'
 
-                        # if they are both the same
+                        # if they are both 1, use the larger non-thresholded prediction
+                        elif (reverse_trigger_prediction_thresholded == 1) and (inadequate_support_prediction_thresholded == 1):
+
+                            # if reverse trigger prediction is larger, use that
+                            if reverse_trigger_prediction > inadequate_support_prediction:
+                                # reverse trigger code is
+                                other_code = '114'
+                            # if inadequate support prediction is larger, use that
+                            else:
+                                # inadequate support code doesn't exist :(
+                                other_code = '113'
+
+                        # if they are both 0
                         else:
+
                             # code is 1 for 'Other'
                             other_code = '1'
 

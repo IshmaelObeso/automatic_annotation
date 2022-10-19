@@ -150,10 +150,10 @@ class MultitargetPredictionGenerator:
         """ Use a threshold to get binarized predictions for every breath """
 
         # threshold Reverse Trigger Predictions
-        predictions_df['Double Trigger Reverse Trigger_pred'] = (predictions_df['Double Trigger Reverse Trigger_pred'] >= thresholds[0]).astype(int)
+        predictions_df['Double Trigger Reverse Trigger_threshold'] = (predictions_df['Double Trigger Reverse Trigger_pred'] >= thresholds[0]).astype(int)
 
         # threshold Inadequate Support Predictions
-        predictions_df['Double Trigger Inadequate Support_pred'] = (predictions_df['Double Trigger Inadequate Support_pred'] >= thresholds[1]).astype(int)
+        predictions_df['Double Trigger Inadequate Support_threshold'] = (predictions_df['Double Trigger Inadequate Support_pred'] >= thresholds[1]).astype(int)
 
         return predictions_df
 

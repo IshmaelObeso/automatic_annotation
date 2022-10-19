@@ -20,7 +20,7 @@ def main(
         export_directory ='\\datasets',
          vent_annotator_filepath='.\\batch_annotator\RipVent.BatchProcessor.exe',
          binary_threshold=.804,
-         multitarget_thresholds=[.25, 3.3e-01],
+         multitarget_thresholds=[.001, 1.14e-05],
          generate_triplets_and_statics=True,
          generate_annotations=True
          ):
@@ -107,7 +107,7 @@ if __name__ == "__main__":
     p.add_argument('--generate_triplets_and_statics', type=bool, default=True)
     p.add_argument('--generate_annotations', type=bool, default=True)
     p.add_argument('--binary_threshold', type=float, default=.804)
-    p.add_argument('--multitarget_thresholds', help='[reverse_trigger_threshold, inadequate_support_threshold]', type=list, default=[.25, 3.3e-01])
+    p.add_argument('--multitarget_thresholds', help='[reverse_trigger_threshold, inadequate_support_threshold]', type=list, default=[.001, 3.3e-01])
     args = vars(p.parse_args())
 
     # define args
