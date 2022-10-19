@@ -14,9 +14,7 @@ class BinaryPredictionGenerator:
         self.spectral_triplet_directory, self.predictions_export_directory, self.predictions_output_path_csv, self.predictions_output_path_hdf = self.setup_directories(spectral_triplet_directory)
 
         #instantiate dataset
-        self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory)
-
-
+        self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory, output_cols=['Double Trigger'])
 
     def setup_directories(self, spectral_triplet_directory):
 
@@ -74,7 +72,7 @@ class BinaryPredictionGenerator:
         all_uids = self.data_class.get_uids()
 
         # for every spectrogram in dataset
-        for uid in tqdm.tqdm(all_uids, desc='Generating Predictions'):
+        for uid in tqdm.tqdm(all_uids, desc='Generating Binary Predictions'):
 
             # get spectrograms for every uid
             xs, ys, ts, uid = self.data_class.__getitem__(uid)
@@ -88,7 +86,7 @@ class BinaryPredictionGenerator:
             pred = pred[0][0]
 
             # get the max of truth ie. was there a dyssynchrony in this triplet or not
-            ys = np.nan_to_num(ys).max()
+            ys = np.nan_to_num(ys).max(axis=0)
 
             # append to list to make into df later
             preds_list.append(pred)
@@ -98,7 +96,7 @@ class BinaryPredictionGenerator:
             breath_id_list.append(uid[2])
 
         # stack preds and truths into array
-        preds = np.stack(preds_list).flatten()
+        preds = np.stack(preds_list)
         truths = np.stack(truths_list)
 
         # make predictions dataframe
@@ -106,7 +104,7 @@ class BinaryPredictionGenerator:
                            'day_id': day_id_list,
                            'breath_id': breath_id_list})
 
-        preds_df = pd.DataFrame({'prediction': preds, 'truth': truths})
+        preds_df = pd.DataFrame({'prediction': preds[:, 0], 'truth': truths[:, 0]})
 
         preds_df = pd.concat([df, preds_df], axis=1)
 
@@ -118,7 +116,7 @@ class BinaryPredictionGenerator:
         # save the predictions dataframe
         self.save_predictions(preds_df)
 
-        return self.predictions_export_directory
+        return preds_df
 
 class MultitargetPredictionGenerator:
     ''' Generates Prediction dataframe for multitarget model predictions'''
@@ -128,7 +126,7 @@ class MultitargetPredictionGenerator:
             spectral_triplet_directory)
 
         # instantiate dataset
-        self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory)
+        self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory, output_cols=['Double Trigger Reverse Trigger', 'Double Trigger Inadequate Support'])
 
     def setup_directories(self, spectral_triplet_directory):
         # define paths
@@ -149,13 +147,16 @@ class MultitargetPredictionGenerator:
                predictions_output_path_csv.resolve(), \
                predictions_output_path_hdf.resolve()
 
-    def threshold_predictions(self, predictions_df, threshold):
-        """ Use a threshold to get binarized predictions for every breath"""
+    def threshold_predictions(self, predictions_df, thresholds):
+        """ Use a threshold to get binarized predictions for every breath """
 
-        threshold_df = predictions_df
-        threshold_df['prediction'] = (threshold_df['prediction'] >= threshold).astype(int)
+        # threshold Reverse Trigger Predictions
+        predictions_df['Double Trigger Reverse Trigger_pred'] = (predictions_df['Double Trigger Reverse Trigger_pred'] >= thresholds[0]).astype(int)
 
-        return threshold_df
+        # threshold Inadequate Support Predictions
+        predictions_df['Double Trigger Inadequate Support_pred'] = (predictions_df['Double Trigger Inadequate Support_pred'] >= thresholds[1]).astype(int)
+
+        return predictions_df
 
     def save_predictions(self, predictions_df):
         """ saves the raw predictions dataframe into csv and hdf """
@@ -166,8 +167,6 @@ class MultitargetPredictionGenerator:
 
     def get_predictions(self, model, threshold):
         """ get predictions for every spectral triplet in dataset, predictions will be output as hdf file"""
-
-        import pdb; pdb.set_trace()
 
         # get model attributes
         input_name, input_shape, output_name = model.get_model_attributes()
@@ -185,7 +184,8 @@ class MultitargetPredictionGenerator:
         all_uids = self.data_class.get_uids()
 
         # for every spectrogram in dataset
-        for uid in tqdm.tqdm(all_uids, desc='Generating Predictions'):
+        for uid in tqdm.tqdm(all_uids, desc='Generating Multitarget Predictions'):
+
             # get spectrograms for every uid
             xs, ys, ts, uid = self.data_class.__getitem__(uid)
 
@@ -198,7 +198,7 @@ class MultitargetPredictionGenerator:
             pred = pred[0][0]
 
             # get the max of truth ie. was there a dyssynchrony in this triplet or not
-            ys = np.nan_to_num(ys).max()
+            ys = np.nan_to_num(ys).max(axis=0)
 
             # append to list to make into df later
             preds_list.append(pred)
@@ -208,7 +208,7 @@ class MultitargetPredictionGenerator:
             breath_id_list.append(uid[2])
 
         # stack preds and truths into array
-        preds = np.stack(preds_list).flatten()
+        preds = np.stack(preds_list)
         truths = np.stack(truths_list)
 
         # make predictions dataframe
@@ -216,7 +216,8 @@ class MultitargetPredictionGenerator:
                            'day_id': day_id_list,
                            'breath_id': breath_id_list})
 
-        preds_df = pd.DataFrame({'prediction': preds, 'truth': truths})
+        preds_df = pd.DataFrame({'Double Trigger Reverse Trigger_truth': truths[:, 0], 'Double Trigger Reverse Trigger_pred': preds[:, 0],
+                                 'Double Trigger Inadequate Support_truth': truths[:, 1], 'Double Trigger Inadequate Support_pred': preds[:, 1]})
 
         preds_df = pd.concat([df, preds_df], axis=1)
 
@@ -228,5 +229,5 @@ class MultitargetPredictionGenerator:
         # save the predictions dataframe
         self.save_predictions(preds_df)
 
-        return self.predictions_export_directory
+        return preds_df
 
