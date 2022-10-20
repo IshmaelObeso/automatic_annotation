@@ -3,6 +3,11 @@ The Automatic Annotator is a program designed to use a CNN model trained on anno
 datasets of ventilator dyssynchronies.
 
 USAGE:
+-- EXE FILE
+
+You can double click the Bennotator.exe file and run the program that way
+
+-- SCRIPTS
 There are two types of scripts in this program, 
         - batch process to triplets scripts produce only triplets and a statics file from patient-day files
         - batch process to auto annotation scripts produce annotated datasets from unannotated patient-day files
