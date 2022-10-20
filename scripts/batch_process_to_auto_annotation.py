@@ -32,8 +32,7 @@ def main(
 
         print('Generating triplets and statics must happen before generating Annotations. \n Generate Annotations set to True.')
 
-    assert import_directory is not None, 'Import Directory must exist '
-    assert export_directory is not None, 'Export Directory must exist'
+    assert import_directory is not None, 'Import Directory must be provided '
 
     # instantiate batch annotator class
     batch_annotator = batch_annotation_generator.Batch_Annotator(import_directory, export_directory, vent_annotator_filepath)
