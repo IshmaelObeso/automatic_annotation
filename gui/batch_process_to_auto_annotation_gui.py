@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, filedialog
 from tkinter import *
 import sys
 
@@ -33,21 +33,40 @@ tab_control.pack(expand=1, fill='both')
 
 # create buttons and labels in settings tab
 
+# functions to browse for files
+def browse_import_button():
+    global import_path
+    folder_name = filedialog.askdirectory()
+    import_path.set(folder_name)
+
+def browse_export_button():
+    global export_path
+    folder_name = filedialog.askdirectory()
+    export_path.set(folder_name)
+
+def browse_exe_button():
+    global exe_path
+    file_name = filedialog.asksaveasfilename()
+    exe_path.set(file_name)
+
 # create import path label and entry field
 lbl_import_path = ttk.Label(settings_tab, text='Import Directory').grid(column=0, row=0)
 import_path = tk.StringVar()
-ent_import_path = ttk.Entry(settings_tab, textvariable=import_path, width=50).grid(column=1, row=0)
+btn_import_folder_path = ttk.Button(settings_tab, text='Browse', command=browse_import_button).grid(column=1, row=0, sticky='w')
+ent_import_path = ttk.Entry(settings_tab, textvariable=import_path, width=50).grid(column=2, row=0, sticky='w')
 
 # create export path label and entry field
 lbl_export_path = ttk.Label(settings_tab, text='Export Directory').grid(column=0, row=1)
 export_path = tk.StringVar()
-ent_export_path = ttk.Entry(settings_tab, textvariable=export_path, width=50).grid(column=1, row=1)
+btn_export_folder_path = ttk.Button(settings_tab, text='Browse', command=browse_export_button).grid(column=1, row=1, sticky='w')
+ent_export_path = ttk.Entry(settings_tab, textvariable=export_path, width=50).grid(column=2, row=1, sticky='w')
 
 # create exe path label and entry field
 lbl_exe_path = ttk.Label(settings_tab, text='Batch Processor Exe Filepath').grid(column=0, row=2)
 exe_path = tk.StringVar()
 exe_path.set('.\\batch_annotator\RipVent.BatchProcessor.exe')
-ent_exe_path = ttk.Entry(settings_tab, textvariable=exe_path, width=50).grid(column=1, row=2)
+btn_exe_filepath = ttk.Button(settings_tab, text='Browse', command=browse_exe_button).grid(column=1, row=2, sticky='w')
+ent_exe_path = ttk.Entry(settings_tab, textvariable=exe_path, width=50).grid(column=2, row=2, sticky='w')
 
 # create label and checkbox for generating triplets and statics
 lbl_generate_triplets_and_statics = ttk.Label(settings_tab, text='Generate Triplets and Statics').grid(column=0, row=3)
