@@ -237,37 +237,6 @@ class AnnotatedDatasetGenerator:
                                     largest_pred = raw_pred
                                     other_code = class_code
 
-
-
-                        # # find out which one is larger, if they are both the same, the annotation should be 'Other' because we don't know which of the two it is
-                        # # if prediction is reverse trigger
-                        # if reverse_trigger_prediction_thresholded > inadequate_support_prediction_thresholded:
-                        #     # reverse trigger code is
-                        #     other_code = '114'
-                        #
-                        # elif inadequate_support_prediction_thresholded > reverse_trigger_prediction_thresholded:
-
-                        #     # inadequate support code doesn't exist :(
-                        #     other_code = '113'
-                        #
-                        # # if they are both 1, use the larger non-thresholded prediction
-                        # elif (reverse_trigger_prediction_thresholded == 1) and (inadequate_support_prediction_thresholded == 1):
-                        #
-                        #     # if reverse trigger prediction is larger, use that
-                        #     if reverse_trigger_prediction > inadequate_support_prediction:
-                        #         # reverse trigger code is
-                        #         other_code = '114'
-                        #     # if inadequate support prediction is larger, use that
-                        #     else:
-                        #         # inadequate support code doesn't exist :(
-                        #         other_code = '113'
-                        #
-                        # # if they are both 0
-                        # else:
-                        #
-                        #     # code is 1 for 'Other'
-                        #     other_code = '1'
-
                         # write the lines
                         double_trigger_line = f'{begin},{end},{airway_pressure_signal},{double_trigger_code}\n'
                         other_signal_line = f'{begin},{end},{flow_signal},{other_code}\n'
