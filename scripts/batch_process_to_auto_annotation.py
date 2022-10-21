@@ -20,7 +20,7 @@ def main(
         export_directory ='\\datasets',
          vent_annotator_filepath='.\\batch_annotator\RipVent.BatchProcessor.exe',
          binary_threshold=.804,
-         multitarget_thresholds=[.001, 1.14e-05],
+         multitarget_thresholds=[4.8e-02, 3.2e-02, 0.71],
          generate_triplets_and_statics=True,
          generate_annotations=True
          ):
@@ -65,17 +65,21 @@ def main(
         if generate_annotations:
 
             # instantiate binary prediction generator
-            binary_prediction_generator = predictions_generator.BinaryPredictionGenerator(spectral_triplets_directory)
+            binary_prediction_generator = predictions_generator.BinaryPredictionGenerator(spectral_triplets_directory,
+                                                                                          output_cols=['Double Trigger'])
 
             # instantiate multitarget prediction generator
-            multitarget_prediction_generator = predictions_generator.MultitargetPredictionGenerator(spectral_triplets_directory)
+            multitarget_prediction_generator = predictions_generator.MultitargetPredictionGenerator(spectral_triplets_directory,
+                                                                                                    output_cols=['Double Trigger Reverse Trigger',
+                                                                                                                 'Double Trigger Premature Termination',
+                                                                                                                 'Double Trigger Flow Undershoot'])
 
             # instantiate dc model
             dc_model_path = '.\\models\\dc_model.onnx'
             dc_model = annotation_model.Annotation_Model(dc_model_path)
 
             # instantiate multitarget model
-            multitarget_model_path = '.\\models\\mt_model.onnx'
+            multitarget_model_path = '.\\models\\mt_all_model.onnx'
             multitarget_model = annotation_model.Annotation_Model(multitarget_model_path)
 
             # get predictions for dc model
@@ -106,7 +110,7 @@ if __name__ == "__main__":
     p.add_argument('--generate_triplets_and_statics', type=bool, default=True)
     p.add_argument('--generate_annotations', type=bool, default=True)
     p.add_argument('--binary_threshold', type=float, default=.804)
-    p.add_argument('--multitarget_thresholds', help='[reverse_trigger_threshold, inadequate_support_threshold]', type=list, default=[.001, 3.3e-01])
+    p.add_argument('--multitarget_thresholds', help='[reverse_trigger_threshold, inadequate_support_threshold]', type=list, default=[4.8e-02, 3.2e-02, 0.71])
     args = vars(p.parse_args())
 
     # define args

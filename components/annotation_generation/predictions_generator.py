@@ -8,13 +8,13 @@ from components.annotation_generation import prediction_data_pipe
 class BinaryPredictionGenerator:
     ''' Generates Prediction dataframe for binary model predictions '''
 
-    def __init__(self, spectral_triplet_directory):
+    def __init__(self, spectral_triplet_directory, output_cols=['Double Trigger']):
 
         # setup directories
         self.spectral_triplet_directory, self.predictions_export_directory, self.predictions_output_path_csv, self.predictions_output_path_hdf = self.setup_directories(spectral_triplet_directory)
 
         #instantiate dataset
-        self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory, output_cols=['Double Trigger'])
+        self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory, output_cols=output_cols)
 
     def setup_directories(self, spectral_triplet_directory):
 
@@ -119,13 +119,13 @@ class BinaryPredictionGenerator:
 
 class MultitargetPredictionGenerator:
     ''' Generates Prediction dataframe for multitarget model predictions'''
-    def __init__(self, spectral_triplet_directory):
+    def __init__(self, spectral_triplet_directory, output_cols=['Double Trigger Reverse Trigger', 'Double Trigger Premature Termination', 'Double Trigger Flow Undershoot']):
         # setup directories
         self.spectral_triplet_directory, self.predictions_export_directory, self.predictions_output_path_csv, self.predictions_output_path_hdf = self.setup_directories(
             spectral_triplet_directory)
 
         # instantiate dataset
-        self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory, output_cols=['Double Trigger Reverse Trigger', 'Double Trigger Inadequate Support'])
+        self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory, output_cols=output_cols)
 
     def setup_directories(self, spectral_triplet_directory):
         # define paths
@@ -153,7 +153,10 @@ class MultitargetPredictionGenerator:
         predictions_df['Double Trigger Reverse Trigger_threshold'] = (predictions_df['Double Trigger Reverse Trigger_pred'] >= thresholds[0]).astype(int)
 
         # threshold Inadequate Support Predictions
-        predictions_df['Double Trigger Inadequate Support_threshold'] = (predictions_df['Double Trigger Inadequate Support_pred'] >= thresholds[1]).astype(int)
+        predictions_df['Double Trigger Premature Termination_threshold'] = (predictions_df['Double Trigger Premature Termination_pred'] >= thresholds[1]).astype(int)
+
+        # threshold Inadequate Support Predictions
+        predictions_df['Double Trigger Flow Undershoot_threshold'] = (predictions_df['Double Trigger Flow Undershoot_pred'] >= thresholds[2]).astype(int)
 
         return predictions_df
 
@@ -216,7 +219,8 @@ class MultitargetPredictionGenerator:
                            'breath_id': breath_id_list})
 
         preds_df = pd.DataFrame({'Double Trigger Reverse Trigger_truth': truths[:, 0], 'Double Trigger Reverse Trigger_pred': preds[:, 0],
-                                 'Double Trigger Inadequate Support_truth': truths[:, 1], 'Double Trigger Inadequate Support_pred': preds[:, 1]})
+                                 'Double Trigger Premature Termination_truth': truths[:, 1], 'Double Trigger Premature Termination_pred': preds[:, 1],
+                                 'Double Trigger Flow Undershoot_truth': truths[:, 2], 'Double Trigger Flow Undershoot_pred': preds[:, 2]})
 
         preds_df = pd.concat([df, preds_df], axis=1)
 

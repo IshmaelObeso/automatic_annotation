@@ -194,37 +194,78 @@ class AnnotatedDatasetGenerator:
                         reverse_trigger_prediction_thresholded = multitarget_patient_day_preds.loc[index]['Double Trigger Reverse Trigger_threshold']
 
                         # get the inadequate support prediction for the breath with the Double Trigger
-                        inadequate_support_prediction = multitarget_patient_day_preds.loc[index]['Double Trigger Inadequate Support_pred']
-                        inadequate_support_prediction_thresholded = multitarget_patient_day_preds.loc[index]['Double Trigger Inadequate Support_threshold']
+                        premature_termination_prediction = multitarget_patient_day_preds.loc[index]['Double Trigger Premature Termination_pred']
+                        premature_termination_prediction_thresholded = multitarget_patient_day_preds.loc[index]['Double Trigger Premature Termination_threshold']
 
-                        # find out which one is larger, if they are both the same, the annotation should be 'Other' because we don't know which of the two it is
-                        # if prediction is reverse trigger
-                        if reverse_trigger_prediction_thresholded > inadequate_support_prediction_thresholded:
-                            # reverse trigger code is
-                            other_code = '114'
+                        # get the inadequate support prediction for the breath with the Double Trigger
+                        flow_undershoot_prediction = multitarget_patient_day_preds.loc[index]['Double Trigger Flow Undershoot_pred']
+                        flow_undershoot_prediction_thresholded = multitarget_patient_day_preds.loc[index]['Double Trigger Flow Undershoot_threshold']
 
-                        elif inadequate_support_prediction_thresholded > reverse_trigger_prediction_thresholded:
-                            # TODO: train underlying doubletrigger_all model in order to actually differentiate the parts of inadequate support
-                            # inadequate support code doesn't exist :(
-                            other_code = '113'
+                        # make dict with information about each column
+                        multitarget_dict = {reverse_trigger_prediction_thresholded: {'prediction': reverse_trigger_prediction, 'code': '114'},
+                        premature_termination_prediction_thresholded: {'prediction': premature_termination_prediction, 'code': '111'},
+                        flow_undershoot_prediction_thresholded: {'prediction': flow_undershoot_prediction, 'code': '115'},
+                        }
 
-                        # if they are both 1, use the larger non-thresholded prediction
-                        elif (reverse_trigger_prediction_thresholded == 1) and (inadequate_support_prediction_thresholded == 1):
+                        # find out which classes passed their thresholds for detection
+                        prediction_thresholded_list = [reverse_trigger_prediction_thresholded, premature_termination_prediction_thresholded, flow_undershoot_prediction_thresholded]
+                        detected = [item for i, item in enumerate(prediction_thresholded_list) if prediction_thresholded_list[i] == 1]
 
-                            # if reverse trigger prediction is larger, use that
-                            if reverse_trigger_prediction > inadequate_support_prediction:
-                                # reverse trigger code is
-                                other_code = '114'
-                            # if inadequate support prediction is larger, use that
-                            else:
-                                # inadequate support code doesn't exist :(
-                                other_code = '113'
-
-                        # if they are both 0
-                        else:
-
-                            # code is 1 for 'Other'
+                        # if no class passed threshold, use 'Other' code
+                        if len(detected) == 0:
                             other_code = '1'
+
+                        # if just one class passed threshold, use that class code
+                        if len(detected) == 1:
+                            other_code = multitarget_dict[detected[0]]['code']
+
+                        # if multiple classes passed threshold, find the class with the largest raw prediction and use that
+                        if len(detected) > 1:
+
+                            # variables to keep track of largest prediction and its asynchrony code
+                            largest_pred = 0
+                            other_code = '1'
+
+                            # loop through the classes that passed detection threshold
+                            for i, label in enumerate(detected):
+
+                                raw_pred = multitarget_dict[detected[i]]['prediction']
+                                class_code = multitarget_dict[detected[i]]['code']
+
+                                if raw_pred > largest_pred:
+
+                                    largest_pred = raw_pred
+                                    other_code = class_code
+
+
+                        # # find out which one is larger, if they are both the same, the annotation should be 'Other' because we don't know which of the two it is
+                        # # if prediction is reverse trigger
+                        # if reverse_trigger_prediction_thresholded > inadequate_support_prediction_thresholded:
+                        #     # reverse trigger code is
+                        #     other_code = '114'
+                        #
+                        # elif inadequate_support_prediction_thresholded > reverse_trigger_prediction_thresholded:
+
+                        #     # inadequate support code doesn't exist :(
+                        #     other_code = '113'
+                        #
+                        # # if they are both 1, use the larger non-thresholded prediction
+                        # elif (reverse_trigger_prediction_thresholded == 1) and (inadequate_support_prediction_thresholded == 1):
+                        #
+                        #     # if reverse trigger prediction is larger, use that
+                        #     if reverse_trigger_prediction > inadequate_support_prediction:
+                        #         # reverse trigger code is
+                        #         other_code = '114'
+                        #     # if inadequate support prediction is larger, use that
+                        #     else:
+                        #         # inadequate support code doesn't exist :(
+                        #         other_code = '113'
+                        #
+                        # # if they are both 0
+                        # else:
+                        #
+                        #     # code is 1 for 'Other'
+                        #     other_code = '1'
 
                         # write the lines
                         double_trigger_line = f'{begin},{end},{airway_pressure_signal},{double_trigger_code}\n'

@@ -46,7 +46,7 @@ def browse_export_button():
 
 def browse_exe_button():
     global exe_path
-    file_name = filedialog.asksaveasfilename()
+    file_name = filedialog.askopenfilename()
     exe_path.set(file_name)
 
 # create import path label and entry field
@@ -79,7 +79,30 @@ generate_annotations = BooleanVar(value=True)
 ent_generate_annotations = ttk.Checkbutton(settings_tab, variable=generate_annotations).grid(column=1, row=4, sticky='w')
 
 # create placeholder in the advanced settings tab
-lbl_placeholder = ttk.Label(advanced_settings_tab, text='Placeholder, Tab will include options for generating predictions and settings thresholds in the future.\n Dont touch unless you read the paper').grid(column=0, row=0)
+lbl_binary_threshold = ttk.Label(advanced_settings_tab, text='Double Trigger Threshold').grid(column=0, row=0)
+binary_threshold = tk.StringVar()
+binary_threshold.set('.804')
+ent_binary_threshold = ttk.Entry(advanced_settings_tab, textvariable=binary_threshold).grid(column=1, row=0, sticky='w')
+lbl_binary_threshold_2 = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=0, sticky='w')
+
+lbl_reverse_trigger_threshold = ttk.Label(advanced_settings_tab, text='Reverse Trigger Threshold').grid(column=0, row=1)
+reverse_trigger_threshold = tk.StringVar()
+reverse_trigger_threshold.set('4.8e-02')
+ent_reverse_trigger_threshold = ttk.Entry(advanced_settings_tab, textvariable=reverse_trigger_threshold).grid(column=1, row=1, sticky='w')
+lbl_reverse_trigger_threshold__2 = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=1, sticky='w')
+
+lbl_premature_termination_threshold = ttk.Label(advanced_settings_tab, text='Premature Termination Threshold').grid(column=0, row=2)
+premature_termination_threshold = tk.StringVar()
+premature_termination_threshold.set('3.2e-02')
+ent_premature_termination_threshold = ttk.Entry(advanced_settings_tab, textvariable=premature_termination_threshold).grid(column=1, row=2, sticky='w')
+lbl_premature_termination_threshold_2 = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=2, sticky='w')
+
+lbl_flow_undershoot_threshold = ttk.Label(advanced_settings_tab, text='Flow Undershoot Threshold').grid(column=0, row=3)
+flow_undershoot_threshold = tk.StringVar()
+flow_undershoot_threshold.set('0.71')
+ent_flow_undershoot_threshold = ttk.Entry(advanced_settings_tab, textvariable=flow_undershoot_threshold).grid(column=1, row=3, sticky='w')
+lbl_flow_undershoot_threshold_2 = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=3, sticky='w')
+
 
 # function that will grab all user input and pass it to function
 def pass_user_input():
@@ -90,12 +113,24 @@ def pass_user_input():
     generate_triplets_and_statics_input = generate_triplets_and_statics.get()
     generate_annotations_input = generate_annotations.get()
 
+    # get threshold inputs, convert strings to float, set min to 0, set max to 1
+    binary_threshold_input = min(max(float(binary_threshold.get()), 0), 1)
+    reverse_trigger_threshold_input = min(max(float(reverse_trigger_threshold.get()), 0), 1)
+    premature_termination_threshold_input = min(max(float(premature_termination_threshold.get()), 0), 1)
+    flow_undershoot_threshold_input = min(max(float(flow_undershoot_threshold.get()), 0), 1)
+
+    # turn multilabel thresholds to list
+    multilabel_thresholds = [reverse_trigger_threshold_input, premature_termination_threshold_input, flow_undershoot_threshold_input]
+
+
     batch_process_to_auto_annotation.main(
         import_path_input,
         export_directory=export_path_input,
         vent_annotator_filepath=exe_filepath_input,
         generate_triplets_and_statics=generate_triplets_and_statics_input,
-        generate_annotations=generate_annotations_input
+        generate_annotations=generate_annotations_input,
+        binary_threshold=binary_threshold_input,
+        multitarget_thresholds=multilabel_thresholds
     )
 
     print('---------Done!---------')
