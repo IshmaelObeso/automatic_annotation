@@ -130,7 +130,7 @@ class AnnotatedDatasetGenerator:
             pt_day_preds = predictions_df.loc[pt_day]
 
             # get rows where there was a dyssynchrony
-            pt_day_preds_dyssynchrony_index =pt_day_preds[pt_day_preds['prediction'] == 1].index
+            pt_day_preds_dyssynchrony_index =pt_day_preds[pt_day_preds['Double Trigger_preds'] == 1].index
 
             # get filepath to the new dataset directory with patient_day_filename
             patient_day_filepath = Path(self.annotated_dataset_directory, patient_day_file.name)
@@ -190,15 +190,15 @@ class AnnotatedDatasetGenerator:
                         multitarget_patient_day_preds = multitarget_predictions_df.loc[pt_day]
 
                         # get the reverse trigger prediction for the breath with the Double Trigger
-                        reverse_trigger_prediction = multitarget_patient_day_preds.loc[index]['Double Trigger Reverse Trigger_pred']
+                        reverse_trigger_prediction = multitarget_patient_day_preds.loc[index]['Double Trigger Reverse Trigger_preds']
                         reverse_trigger_prediction_thresholded = multitarget_patient_day_preds.loc[index]['Double Trigger Reverse Trigger_threshold']
 
                         # get the inadequate support prediction for the breath with the Double Trigger
-                        premature_termination_prediction = multitarget_patient_day_preds.loc[index]['Double Trigger Premature Termination_pred']
+                        premature_termination_prediction = multitarget_patient_day_preds.loc[index]['Double Trigger Premature Termination_preds']
                         premature_termination_prediction_thresholded = multitarget_patient_day_preds.loc[index]['Double Trigger Premature Termination_threshold']
 
                         # get the inadequate support prediction for the breath with the Double Trigger
-                        flow_undershoot_prediction = multitarget_patient_day_preds.loc[index]['Double Trigger Flow Undershoot_pred']
+                        flow_undershoot_prediction = multitarget_patient_day_preds.loc[index]['Double Trigger Flow Undershoot_preds']
                         flow_undershoot_prediction_thresholded = multitarget_patient_day_preds.loc[index]['Double Trigger Flow Undershoot_threshold']
 
                         # make dict with information about each column

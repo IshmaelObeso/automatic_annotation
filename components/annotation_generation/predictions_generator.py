@@ -16,6 +16,8 @@ class BinaryPredictionGenerator:
         #instantiate dataset
         self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory, output_cols=output_cols)
 
+        self.output_cols = output_cols
+
     def setup_directories(self, spectral_triplet_directory):
 
         # define paths
@@ -40,7 +42,8 @@ class BinaryPredictionGenerator:
 
         """ Use a threshold to get binarized predictions for every breath"""
 
-        predictions_df['prediction'] = (predictions_df['prediction'] >= threshold).astype(int)
+        #TODO make thresholds dictionary indexed to their dyssynchronies
+        predictions_df['Double Trigger_preds'] = (predictions_df['Double Trigger_preds'] >= threshold).astype(int)
 
         return predictions_df
 
@@ -70,6 +73,8 @@ class BinaryPredictionGenerator:
         # get all uids in dataset
         all_uids = self.data_class.get_uids()
 
+        preds_df_list = []
+
         # for every spectrogram in dataset
         for uid in tqdm.tqdm(all_uids, desc='Generating Binary Predictions'):
 
@@ -87,26 +92,25 @@ class BinaryPredictionGenerator:
             # get the max of truth ie. was there a dyssynchrony in this triplet or not
             ys = np.nan_to_num(ys).max(axis=0)
 
-            # append to list to make into df later
-            preds_list.append(pred)
-            truths_list.append(ys)
-            patient_id_list.append(uid[0])
-            day_id_list.append(uid[1])
-            breath_id_list.append(uid[2])
+            # save truth and preds as dataframes
+            uid_y0s_df = pd.DataFrame([pred], columns=[f'{col}_preds' for col in self.output_cols])
+            uid_ys_df = pd.DataFrame([ys], columns=[f'{col}_truth' for col in self.output_cols])
 
-        # stack preds and truths into array
-        preds = np.stack(preds_list)
-        truths = np.stack(truths_list)
+            # concat truth and preds
+            uid_df = pd.concat([uid_ys_df, uid_y0s_df], axis=1)
 
-        # make predictions dataframe
-        df = pd.DataFrame({'patient_id': patient_id_list,
-                           'day_id': day_id_list,
-                           'breath_id': breath_id_list})
+            # add index columns
+            uid_df['patient_id'] = uid[0]
+            uid_df['day_id'] = uid[1]
+            uid_df['breath_id'] = uid[2]
 
-        preds_df = pd.DataFrame({'prediction': preds[:, 0], 'truth': truths[:, 0]})
+            # add to dfs list
+            preds_df_list.append(uid_df)
 
-        preds_df = pd.concat([df, preds_df], axis=1)
+        # concat dfs
+        preds_df = pd.concat(preds_df_list)
 
+        # set index
         preds_df = preds_df.set_index(['patient_id', 'day_id', 'breath_id'])
 
         # threshold predictions df
@@ -126,6 +130,9 @@ class MultitargetPredictionGenerator:
 
         # instantiate dataset
         self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory, output_cols=output_cols)
+
+        # save output cols
+        self.output_cols = output_cols
 
     def setup_directories(self, spectral_triplet_directory):
         # define paths
@@ -150,13 +157,13 @@ class MultitargetPredictionGenerator:
         """ Use a threshold to get binarized predictions for every breath """
 
         # threshold Reverse Trigger Predictions
-        predictions_df['Double Trigger Reverse Trigger_threshold'] = (predictions_df['Double Trigger Reverse Trigger_pred'] >= thresholds[0]).astype(int)
+        predictions_df['Double Trigger Reverse Trigger_threshold'] = (predictions_df['Double Trigger Reverse Trigger_preds'] >= thresholds[0]).astype(int)
 
         # threshold Inadequate Support Predictions
-        predictions_df['Double Trigger Premature Termination_threshold'] = (predictions_df['Double Trigger Premature Termination_pred'] >= thresholds[1]).astype(int)
+        predictions_df['Double Trigger Premature Termination_threshold'] = (predictions_df['Double Trigger Premature Termination_preds'] >= thresholds[1]).astype(int)
 
         # threshold Inadequate Support Predictions
-        predictions_df['Double Trigger Flow Undershoot_threshold'] = (predictions_df['Double Trigger Flow Undershoot_pred'] >= thresholds[2]).astype(int)
+        predictions_df['Double Trigger Flow Undershoot_threshold'] = (predictions_df['Double Trigger Flow Undershoot_preds'] >= thresholds[2]).astype(int)
 
         return predictions_df
 
@@ -185,6 +192,8 @@ class MultitargetPredictionGenerator:
         # get all uids in dataset
         all_uids = self.data_class.get_uids()
 
+        preds_df_list = []
+
         # for every spectrogram in dataset
         for uid in tqdm.tqdm(all_uids, desc='Generating Multitarget Predictions'):
 
@@ -196,6 +205,7 @@ class MultitargetPredictionGenerator:
 
             # get prediction
             pred = model.session.run([output_name], {input_name: xs.astype(np.float32)})
+
             # get prediction as a singular array
             pred = pred[0][0]
 
@@ -209,21 +219,25 @@ class MultitargetPredictionGenerator:
             day_id_list.append(uid[1])
             breath_id_list.append(uid[2])
 
-        # stack preds and truths into array
-        preds = np.stack(preds_list)
-        truths = np.stack(truths_list)
+            # save truth and preds as dataframes
+            uid_y0s_df = pd.DataFrame([pred], columns=[f'{col}_preds' for col in self.output_cols])
+            uid_ys_df = pd.DataFrame([ys], columns=[f'{col}_truth' for col in self.output_cols])
 
-        # make predictions dataframe
-        df = pd.DataFrame({'patient_id': patient_id_list,
-                           'day_id': day_id_list,
-                           'breath_id': breath_id_list})
+            # concat truth and preds
+            uid_df = pd.concat([uid_ys_df, uid_y0s_df], axis=1)
 
-        preds_df = pd.DataFrame({'Double Trigger Reverse Trigger_truth': truths[:, 0], 'Double Trigger Reverse Trigger_pred': preds[:, 0],
-                                 'Double Trigger Premature Termination_truth': truths[:, 1], 'Double Trigger Premature Termination_pred': preds[:, 1],
-                                 'Double Trigger Flow Undershoot_truth': truths[:, 2], 'Double Trigger Flow Undershoot_pred': preds[:, 2]})
+            # add index columns
+            uid_df['patient_id'] = uid[0]
+            uid_df['day_id'] = uid[1]
+            uid_df['breath_id'] = uid[2]
 
-        preds_df = pd.concat([df, preds_df], axis=1)
+            # add to dfs list
+            preds_df_list.append(uid_df)
 
+        # concat dfs
+        preds_df = pd.concat(preds_df_list)
+
+        # set index
         preds_df = preds_df.set_index(['patient_id', 'day_id', 'breath_id'])
 
         # threshold predictions df
