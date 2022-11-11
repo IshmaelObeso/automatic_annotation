@@ -12,7 +12,7 @@ class AnnotatedDatasetGenerator:
     def __init__(self, raw_files_directory, spectral_triplets_directory):
 
         # setup directories
-        self.annotated_dataset_directory, self.raw_files_directory, self.spectral_triplets_directory, self.spectral_statics_filepath = self.setup_directories(raw_files_directory, spectral_triplets_directory)
+        self.setup_directories(raw_files_directory, spectral_triplets_directory)
 
     def setup_directories(self, raw_files_directory, spectral_triplets_directory):
 
@@ -29,10 +29,19 @@ class AnnotatedDatasetGenerator:
         # get the spectral triplet statics file path
         spectral_statics_filepath = Path(spectral_triplets_directory, 'spectral_statics.csv')
 
-        return annotated_dataset_directory.resolve(),\
-               raw_files_directory.resolve(),\
-               spectral_triplets_directory.resolve(),\
-               spectral_statics_filepath.resolve()
+        self.annotated_dataset_directory = annotated_dataset_directory.resolve()
+        self.raw_files_directory = raw_files_directory.resolve()
+        self.spectral_triplets_directory = spectral_triplets_directory.resolve()
+        self.spectral_statics_filepath = spectral_statics_filepath.resolve()
+
+
+    def save_predictions(self, predictions_df):
+        """ saves the raw predictions dataframe into csv and hdf """
+
+        # Write the statics file
+        predictions_df.to_hdf(self.predictions_output_path_hdf, key='statics')
+        predictions_df.to_csv(self.predictions_output_path_csv)
+
 
     def get_breath_times(self, predictions_df):
 
@@ -103,16 +112,16 @@ class AnnotatedDatasetGenerator:
 
         return patient_day_files_with_predictions
 
-    def create_art_files(self, binary_predictions_df, multitarget_predictions_df=None):
+    def create_art_files(self, predictions_df):
 
         """ creates artifact files for every patient day we have predictions for from the binary predictions, and adds multitarget predictions if there is a multitarget prediction file"""
 
         # get a list of all patient day files that we have predictions for and copy any raw patient day files we have
         # predictions for into the annotated dataset directory
-        patient_day_files_with_predictions = self.copy_raw_files(binary_predictions_df)
+        patient_day_files_with_predictions = self.copy_raw_files(predictions_df)
 
         # merge breath times into the predictions dataframe
-        predictions_df = self.get_breath_times(binary_predictions_df)
+        predictions_df = self.get_breath_times(predictions_df)
 
         # for every patient day we have predictions for
         for patient_day_file in patient_day_files_with_predictions:
@@ -130,7 +139,7 @@ class AnnotatedDatasetGenerator:
             pt_day_preds = predictions_df.loc[pt_day]
 
             # get rows where there was a dyssynchrony
-            pt_day_preds_dyssynchrony_index =pt_day_preds[pt_day_preds['Double Trigger_preds'] == 1].index
+            pt_day_preds_dyssynchrony_index =pt_day_preds[pt_day_preds['Double Trigger_threshold'] == 1].index
 
             # get filepath to the new dataset directory with patient_day_filename
             patient_day_filepath = Path(self.annotated_dataset_directory, patient_day_file.name)
@@ -146,7 +155,7 @@ class AnnotatedDatasetGenerator:
                 for index in pt_day_preds_dyssynchrony_index:
 
                     # if we have not included a multitarget preds dataframe
-                    if multitarget_predictions_df is None:
+                    if predictions_df is None:
 
                         begin = pt_day_preds.loc[index]['start_time']
                         end = pt_day_preds.loc[index]['end_time']
@@ -187,7 +196,7 @@ class AnnotatedDatasetGenerator:
                         flow_signal = 'SpirometryFlow'
 
                         # grab the patient day from the multitarget dataframe
-                        multitarget_patient_day_preds = multitarget_predictions_df.loc[pt_day]
+                        multitarget_patient_day_preds = predictions_df.loc[pt_day]
 
                         # get the reverse trigger prediction for the breath with the Double Trigger
                         reverse_trigger_prediction = multitarget_patient_day_preds.loc[index]['Double Trigger Reverse Trigger_preds']
@@ -202,9 +211,9 @@ class AnnotatedDatasetGenerator:
                         flow_undershoot_prediction_thresholded = multitarget_patient_day_preds.loc[index]['Double Trigger Flow Undershoot_threshold']
 
                         # make dict with information about each column
-                        multitarget_dict = {reverse_trigger_prediction_thresholded: {'prediction': reverse_trigger_prediction, 'code': '114'},
-                        premature_termination_prediction_thresholded: {'prediction': premature_termination_prediction, 'code': '111'},
-                        flow_undershoot_prediction_thresholded: {'prediction': flow_undershoot_prediction, 'code': '115'},
+                        multitarget_dict = {reverse_trigger_prediction_thresholded.to_frame(): {'prediction': reverse_trigger_prediction, 'code': '114'},
+                        premature_termination_prediction_thresholded: {'prediction': premature_termination_prediction.to_frame(), 'code': '111'},
+                        flow_undershoot_prediction_thresholded: {'prediction': flow_undershoot_prediction.to_frame(), 'code': '115'},
                         }
 
                         # find out which classes passed their thresholds for detection

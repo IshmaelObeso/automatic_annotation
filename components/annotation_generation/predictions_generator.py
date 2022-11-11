@@ -4,58 +4,112 @@ import numpy as np
 from pathlib import Path
 from components.annotation_generation import prediction_data_pipe
 
+class PredictionWrapper:
 
-class BinaryPredictionGenerator:
+    '''
+    Warps around a prediction generator, allows for multiple model predictions to be output and concantenated into a predictions dataframe
+    '''
+
+
+    def __init__(self, spectral_triplets_directory):
+
+        ''' initiate by setting up directory paths '''
+
+        # setup directories
+        self.setup_directories(spectral_triplets_directory=spectral_triplets_directory)
+
+    def setup_directories(self, spectral_triplets_directory):
+
+        spectral_triplets_directory = Path(spectral_triplets_directory)
+
+        # put preds df in the parent directory of the spectral triplets directory
+        spectral_triplets_parent_directory = spectral_triplets_directory.parents[0]
+        predictions_export_directory = Path(spectral_triplets_parent_directory, 'predictions')
+
+        predictions_export_directory.mkdir(parents=True, exist_ok=True)
+
+        # setup predictions dataframe filepath
+        predictions_output_path_csv = Path(predictions_export_directory, 'predictions.csv')
+        predictions_output_path_hdf = Path(predictions_export_directory, 'predictions.hdf')
+
+        self.spectral_triplets_directory = spectral_triplets_directory
+        self.predictions_output_path_csv = predictions_output_path_csv.resolve()
+        self.predictions_output_path_hdf = predictions_output_path_hdf.resolve()
+
+
+    def save_predictions(self, predictions_df):
+        """ saves the raw predictions dataframe into csv and hdf """
+
+        # Write the statics file
+        predictions_df.to_hdf(self.predictions_output_path_hdf, key='statics')
+        predictions_df.to_csv(self.predictions_output_path_csv)
+
+    def generate_all_predictions(self, models_dict):
+
+        ''' get dictionary with information about models, use this to generate predictions '''
+
+        # make list of predictions dataframes
+        prediction_dfs = []
+
+        # get predictions for every model and aggregate predictions into one dataframe
+        for model, parameters in  models_dict.items():
+
+            # instantiate prediction generator
+            prediction_generator = PredictionGenerator(
+                spectral_triplet_directory=self.spectral_triplets_directory,
+                output_cols=parameters['output_columns'])
+
+            # get predictions file for model
+            predictions_df = prediction_generator.get_predictions(model, parameters)
+
+            # append predictions df to prediction dfs list
+            prediction_dfs.append(predictions_df)
+
+        # make large df from list of smaller dfs
+        predictions_df = pd.concat(prediction_dfs)
+
+        # save predictiojns
+        self.save_predictions(predictions_df)
+
+        return predictions_df
+
+
+
+class PredictionGenerator:
     ''' Generates Prediction dataframe for binary model predictions '''
 
     def __init__(self, spectral_triplet_directory, output_cols=['Double Trigger']):
-
-        # setup directories
-        self.spectral_triplet_directory, self.predictions_export_directory, self.predictions_output_path_csv, self.predictions_output_path_hdf = self.setup_directories(spectral_triplet_directory)
 
         #instantiate dataset
         self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory, output_cols=output_cols)
 
         self.output_cols = output_cols
 
-    def setup_directories(self, spectral_triplet_directory):
-
-        # define paths
-        spectral_triplet_directory = Path(spectral_triplet_directory)
-
-        # put preds df in the parent directory of the spectral triplets directory
-        spectral_triplets_parent_directory = spectral_triplet_directory.parents[0]
-        predictions_export_directory = Path(spectral_triplets_parent_directory, 'predictions')
-
-        predictions_export_directory.mkdir(parents=True, exist_ok=True)
-
-        # setup predictions dataframe filepath
-        predictions_output_path_csv = Path(predictions_export_directory, 'binary_predictions.csv')
-        predictions_output_path_hdf = Path(predictions_export_directory, 'binary_predictions.hdf')
-
-        return spectral_triplet_directory.resolve(),\
-               predictions_export_directory.resolve(),\
-               predictions_output_path_csv.resolve(),\
-               predictions_output_path_hdf.resolve()
-
-    def threshold_predictions(self, predictions_df, threshold):
+    def threshold_predictions(self, predictions_df, threshold_list):
 
         """ Use a threshold to get binarized predictions for every breath"""
 
-        #TODO make thresholds dictionary indexed to their dyssynchronies
-        predictions_df['Double Trigger_preds'] = (predictions_df['Double Trigger_preds'] >= threshold).astype(int)
+        # for every dyssynchrony threshold predictions and make new column
+        for i, output_col in enumerate(self.output_cols):
+
+            # get the column names
+            pred_column_name = f'{output_col}_preds'
+            threshold_column_name = f'{output_col}_threshold'
+
+            # get the threshold
+            threshold = threshold_list[i]
+
+            # make threshold column
+            predictions_df[threshold_column_name] = (predictions_df[pred_column_name] >= threshold).astype(int)
 
         return predictions_df
 
-    def save_predictions(self, predictions_df):
-        """ saves the raw predictions dataframe into csv and hdf """
-
-        # Write the statics file
-        predictions_df.to_hdf(self.predictions_output_path_hdf, key='statics')
-        predictions_df.to_csv(self.predictions_output_path_csv)
-
-    def get_predictions(self, model, threshold):
+    def get_predictions(self, model, parameters):
         """ get predictions for every spectral triplet in dataset, predictions will be output as hdf file"""
+
+        # get model parameters
+        threshold_list = parameters['thresholds']
+        name = parameters['name']
 
         # get model attributes
         input_name, input_shape, output_name = model.get_model_attributes()
@@ -76,7 +130,7 @@ class BinaryPredictionGenerator:
         preds_df_list = []
 
         # for every spectrogram in dataset
-        for uid in tqdm.tqdm(all_uids, desc='Generating Binary Predictions'):
+        for uid in tqdm.tqdm(all_uids, desc=f'Generating {name} Predictions'):
 
             # get spectrograms for every uid
             xs, ys, ts, uid = self.data_class.__getitem__(uid)
@@ -114,137 +168,7 @@ class BinaryPredictionGenerator:
         preds_df = preds_df.set_index(['patient_id', 'day_id', 'breath_id'])
 
         # threshold predictions df
-        self.threshold_predictions(preds_df, threshold)
-
-        # save the predictions dataframe
-        self.save_predictions(preds_df)
-
-        return preds_df
-
-class MultitargetPredictionGenerator:
-    ''' Generates Prediction dataframe for multitarget model predictions'''
-    def __init__(self, spectral_triplet_directory, output_cols=['Double Trigger Reverse Trigger', 'Double Trigger Premature Termination', 'Double Trigger Flow Undershoot']):
-        # setup directories
-        self.spectral_triplet_directory, self.predictions_export_directory, self.predictions_output_path_csv, self.predictions_output_path_hdf = self.setup_directories(
-            spectral_triplet_directory)
-
-        # instantiate dataset
-        self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory, output_cols=output_cols)
-
-        # save output cols
-        self.output_cols = output_cols
-
-    def setup_directories(self, spectral_triplet_directory):
-        # define paths
-        spectral_triplet_directory = Path(spectral_triplet_directory)
-
-        # put preds df in the parent directory of the spectral triplets directory
-        spectral_triplets_parent_directory = spectral_triplet_directory.parents[0]
-        predictions_export_directory = Path(spectral_triplets_parent_directory, 'predictions')
-
-        predictions_export_directory.mkdir(parents=True, exist_ok=True)
-
-        # setup predictions dataframe filepath
-        predictions_output_path_csv = Path(predictions_export_directory, 'multitarget_predictions.csv')
-        predictions_output_path_hdf = Path(predictions_export_directory, 'multitarget_predictions.hdf')
-
-        return spectral_triplet_directory.resolve(), \
-               predictions_export_directory.resolve(), \
-               predictions_output_path_csv.resolve(), \
-               predictions_output_path_hdf.resolve()
-
-    def threshold_predictions(self, predictions_df, thresholds):
-        """ Use a threshold to get binarized predictions for every breath """
-
-        # threshold Reverse Trigger Predictions
-        predictions_df['Double Trigger Reverse Trigger_threshold'] = (predictions_df['Double Trigger Reverse Trigger_preds'] >= thresholds[0]).astype(int)
-
-        # threshold Inadequate Support Predictions
-        predictions_df['Double Trigger Premature Termination_threshold'] = (predictions_df['Double Trigger Premature Termination_preds'] >= thresholds[1]).astype(int)
-
-        # threshold Inadequate Support Predictions
-        predictions_df['Double Trigger Flow Undershoot_threshold'] = (predictions_df['Double Trigger Flow Undershoot_preds'] >= thresholds[2]).astype(int)
-
-        return predictions_df
-
-    def save_predictions(self, predictions_df):
-        """ saves the raw predictions dataframe into csv and hdf """
-
-        # Write the statics file
-        predictions_df.to_hdf(self.predictions_output_path_hdf, key='statics')
-        predictions_df.to_csv(self.predictions_output_path_csv)
-
-    def get_predictions(self, model, thresholds):
-        """ get predictions for every spectral triplet in dataset, predictions will be output as hdf file"""
-
-        # get model attributes
-        input_name, input_shape, output_name = model.get_model_attributes()
-        # set batch_size to 1
-        input_shape[0] = 1
-
-        # test getitem for every uid
-        preds_list = []
-        truths_list = []
-        patient_id_list = []
-        day_id_list = []
-        breath_id_list = []
-
-        # get all uids in dataset
-        all_uids = self.data_class.get_uids()
-
-        preds_df_list = []
-
-        # for every spectrogram in dataset
-        for uid in tqdm.tqdm(all_uids, desc='Generating Multitarget Predictions'):
-
-            # get spectrograms for every uid
-            xs, ys, ts, uid = self.data_class.__getitem__(uid)
-
-            # reshape
-            xs = np.reshape(xs, input_shape)
-
-            # get prediction
-            pred = model.session.run([output_name], {input_name: xs.astype(np.float32)})
-
-            # get prediction as a singular array
-            pred = pred[0][0]
-
-            # get the max of truth ie. was there a dyssynchrony in this triplet or not
-            ys = np.nan_to_num(ys).max(axis=0)
-
-            # append to list to make into df later
-            preds_list.append(pred)
-            truths_list.append(ys)
-            patient_id_list.append(uid[0])
-            day_id_list.append(uid[1])
-            breath_id_list.append(uid[2])
-
-            # save truth and preds as dataframes
-            uid_y0s_df = pd.DataFrame([pred], columns=[f'{col}_preds' for col in self.output_cols])
-            uid_ys_df = pd.DataFrame([ys], columns=[f'{col}_truth' for col in self.output_cols])
-
-            # concat truth and preds
-            uid_df = pd.concat([uid_ys_df, uid_y0s_df], axis=1)
-
-            # add index columns
-            uid_df['patient_id'] = uid[0]
-            uid_df['day_id'] = uid[1]
-            uid_df['breath_id'] = uid[2]
-
-            # add to dfs list
-            preds_df_list.append(uid_df)
-
-        # concat dfs
-        preds_df = pd.concat(preds_df_list)
-
-        # set index
-        preds_df = preds_df.set_index(['patient_id', 'day_id', 'breath_id'])
-
-        # threshold predictions df
-        self.threshold_predictions(preds_df, thresholds)
-
-        # save the predictions dataframe
-        self.save_predictions(preds_df)
+        self.threshold_predictions(preds_df, threshold_list)
 
         return preds_df
 

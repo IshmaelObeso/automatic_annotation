@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import pandas as pd
 
 sys.path.append('..')
 
@@ -19,7 +20,7 @@ def main(
          import_directory,
         export_directory ='\\datasets',
          vent_annotator_filepath='.\\batch_annotator\RipVent.BatchProcessor.exe',
-         binary_threshold=.804,
+         binary_threshold=[.804],
          multitarget_thresholds=[4.8e-02, 3.2e-02, 0.71],
          generate_triplets_and_statics=True,
          generate_annotations=True
@@ -64,16 +65,6 @@ def main(
 
         if generate_annotations:
 
-            # instantiate binary prediction generator
-            binary_prediction_generator = predictions_generator.BinaryPredictionGenerator(spectral_triplets_directory,
-                                                                                          output_cols=['Double Trigger'])
-
-            # instantiate multitarget prediction generator
-            multitarget_prediction_generator = predictions_generator.MultitargetPredictionGenerator(spectral_triplets_directory,
-                                                                                                    output_cols=['Double Trigger Reverse Trigger',
-                                                                                                                 'Double Trigger Premature Termination',
-                                                                                                                 'Double Trigger Flow Undershoot'])
-
             # instantiate dc model
             dc_model_path = '.\\models\\dc_model.onnx'
             dc_model = annotation_model.Annotation_Model(dc_model_path)
@@ -82,20 +73,31 @@ def main(
             multitarget_model_path = '.\\models\\mt_all_model.onnx'
             multitarget_model = annotation_model.Annotation_Model(multitarget_model_path)
 
-            # get predictions for dc model
-            binary_preds_df = binary_prediction_generator.get_predictions(dc_model, binary_threshold)
+            # make dict of models with output cols
+            models_dict = {
+                dc_model: {'name': 'Binary Double Trigger',
+                           'output_columns': ['Double Trigger'],
+                           'thresholds': binary_threshold},
+                multitarget_model: {'name': 'Multi-target ',
+                                    'output_columns': ['Double Trigger Reverse Trigger',
+                                                       'Double Trigger Premature Termination',
+                                                       'Double Trigger Flow Undershoot'],
+                                    'thresholds': multitarget_thresholds}
+            }
 
-            # get predictions for multitarget model
-            multitarget_preds_df = multitarget_prediction_generator.get_predictions(multitarget_model, multitarget_thresholds)
+            # instantiate predictions wrapper
+            predictions_wrapper = predictions_generator.PredictionWrapper(spectral_triplets_directory=spectral_triplets_directory)
+
+            # generate all predictions and output as predictions dataframe
+            predictions_df = predictions_wrapper.generate_all_predictions(models_dict=models_dict)
 
             # instantiate annotated dataset generator
             annotation_generator = annotated_dataset_generator.AnnotatedDatasetGenerator(raw_files_directory=import_directory, spectral_triplets_directory=spectral_triplets_directory)
 
             # create artifact file from binary predictions
-            annotation_generator.create_art_files(binary_preds_df, multitarget_preds_df)
+            annotation_generator.create_art_files(predictions_df)
 
             # add multitarget predictions to artifact files
-
             print(f'Annotated Dataset Created at {annotation_generator.annotated_dataset_directory}')
 
 if __name__ == "__main__":
@@ -109,7 +111,7 @@ if __name__ == "__main__":
                    help='Path to vent annotator')
     p.add_argument('--generate_triplets_and_statics', type=bool, default=True)
     p.add_argument('--generate_annotations', type=bool, default=True)
-    p.add_argument('--binary_threshold', type=float, default=.804)
+    p.add_argument('--binary_threshold', type=float, default=[.804])
     p.add_argument('--multitarget_thresholds', help='[reverse_trigger_threshold, inadequate_support_threshold]', type=list, default=[4.8e-02, 3.2e-02, 0.71])
     args = vars(p.parse_args())
 

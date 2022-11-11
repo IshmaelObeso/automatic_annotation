@@ -119,7 +119,8 @@ def pass_user_input():
     premature_termination_threshold_input = min(max(float(premature_termination_threshold.get()), 0), 1)
     flow_undershoot_threshold_input = min(max(float(flow_undershoot_threshold.get()), 0), 1)
 
-    # turn multilabel thresholds to list
+    # turnthresholds to list
+    binary_thresholds = [binary_threshold_input]
     multilabel_thresholds = [reverse_trigger_threshold_input, premature_termination_threshold_input, flow_undershoot_threshold_input]
 
 
