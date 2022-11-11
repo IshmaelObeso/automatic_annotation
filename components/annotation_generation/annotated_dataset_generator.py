@@ -12,7 +12,10 @@ class AnnotatedDatasetGenerator:
     def __init__(self, raw_files_directory, spectral_triplets_directory):
 
         # setup directories
-        self.setup_directories(raw_files_directory, spectral_triplets_directory)
+        self.annotated_dataset_directory,\
+        self.raw_files_directory,\
+        self.spectral_triplets_directory,\
+        self.spectral_statics_filepath = self.setup_directories(raw_files_directory, spectral_triplets_directory)
 
     def setup_directories(self, raw_files_directory, spectral_triplets_directory):
 
@@ -29,10 +32,10 @@ class AnnotatedDatasetGenerator:
         # get the spectral triplet statics file path
         spectral_statics_filepath = Path(spectral_triplets_directory, 'spectral_statics.csv')
 
-        self.annotated_dataset_directory = annotated_dataset_directory.resolve()
-        self.raw_files_directory = raw_files_directory.resolve()
-        self.spectral_triplets_directory = spectral_triplets_directory.resolve()
-        self.spectral_statics_filepath = spectral_statics_filepath.resolve()
+        return annotated_dataset_directory.resolve(),\
+               raw_files_directory.resolve(),\
+               spectral_triplets_directory.resolve(),\
+               spectral_statics_filepath.resolve()
 
 
     def save_predictions(self, predictions_df):

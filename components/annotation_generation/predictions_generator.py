@@ -16,7 +16,9 @@ class PredictionAggregator:
         ''' initiate by setting up directory paths '''
 
         # setup directories
-        self.setup_directories(spectral_triplets_directory=spectral_triplets_directory)
+        self.spectral_triplets_directory,\
+        self.predictions_output_path_csv,\
+        self.predictions_output_path_hdf = self.setup_directories(spectral_triplets_directory=spectral_triplets_directory)
 
     def setup_directories(self, spectral_triplets_directory):
 
@@ -32,9 +34,9 @@ class PredictionAggregator:
         predictions_output_path_csv = Path(predictions_export_directory, 'predictions.csv')
         predictions_output_path_hdf = Path(predictions_export_directory, 'predictions.hdf')
 
-        self.spectral_triplets_directory = spectral_triplets_directory
-        self.predictions_output_path_csv = predictions_output_path_csv.resolve()
-        self.predictions_output_path_hdf = predictions_output_path_hdf.resolve()
+        return spectral_triplets_directory.resolve(),\
+               predictions_output_path_csv.resolve(),\
+               predictions_output_path_hdf.resolve()
 
 
     def save_predictions(self, predictions_df):
@@ -72,9 +74,6 @@ class PredictionAggregator:
         self.save_predictions(predictions_df)
 
         return predictions_df
-
-
-
 class PredictionGenerator:
     ''' Generates Prediction dataframe for binary model predictions '''
 
@@ -115,14 +114,6 @@ class PredictionGenerator:
         input_name, input_shape, output_name = model.get_model_attributes()
         # set batch_size to 1
         input_shape[0] = 1
-
-
-        # test getitem for every uid
-        preds_list = []
-        truths_list = []
-        patient_id_list = []
-        day_id_list = []
-        breath_id_list = []
 
         # get all uids in dataset
         all_uids = self.data_class.get_uids()
