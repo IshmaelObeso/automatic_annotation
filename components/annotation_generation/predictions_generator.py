@@ -4,7 +4,7 @@ import numpy as np
 from pathlib import Path
 from components.annotation_generation import prediction_data_pipe
 
-class PredictionWrapper:
+class PredictionAggregator:
 
     '''
     Warps around a prediction generator, allows for multiple model predictions to be output and concantenated into a predictions dataframe
@@ -66,7 +66,7 @@ class PredictionWrapper:
             prediction_dfs.append(predictions_df)
 
         # make large df from list of smaller dfs
-        predictions_df = pd.concat(prediction_dfs)
+        predictions_df = pd.concat(prediction_dfs, axis=1)
 
         # save predictiojns
         self.save_predictions(predictions_df)

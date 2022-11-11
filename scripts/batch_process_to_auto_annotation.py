@@ -86,7 +86,7 @@ def main(
             }
 
             # instantiate predictions wrapper
-            predictions_wrapper = predictions_generator.PredictionWrapper(spectral_triplets_directory=spectral_triplets_directory)
+            predictions_wrapper = predictions_generator.PredictionAggregator(spectral_triplets_directory=spectral_triplets_directory)
 
             # generate all predictions and output as predictions dataframe
             predictions_df = predictions_wrapper.generate_all_predictions(models_dict=models_dict)

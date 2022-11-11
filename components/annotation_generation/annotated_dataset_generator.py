@@ -211,9 +211,9 @@ class AnnotatedDatasetGenerator:
                         flow_undershoot_prediction_thresholded = multitarget_patient_day_preds.loc[index]['Double Trigger Flow Undershoot_threshold']
 
                         # make dict with information about each column
-                        multitarget_dict = {reverse_trigger_prediction_thresholded.to_frame(): {'prediction': reverse_trigger_prediction, 'code': '114'},
-                        premature_termination_prediction_thresholded: {'prediction': premature_termination_prediction.to_frame(), 'code': '111'},
-                        flow_undershoot_prediction_thresholded: {'prediction': flow_undershoot_prediction.to_frame(), 'code': '115'},
+                        multitarget_dict = {reverse_trigger_prediction_thresholded: {'prediction': reverse_trigger_prediction, 'code': '114'},
+                        premature_termination_prediction_thresholded: {'prediction': premature_termination_prediction, 'code': '111'},
+                        flow_undershoot_prediction_thresholded: {'prediction': flow_undershoot_prediction, 'code': '115'},
                         }
 
                         # find out which classes passed their thresholds for detection
