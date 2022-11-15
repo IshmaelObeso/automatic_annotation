@@ -121,6 +121,7 @@ def pass_user_input():
 
     # turnthresholds to dict
     binary_thresholds = {'Double Trigger': binary_threshold_input}
+
     multilabel_thresholds = {'Double Trigger Reverse Trigger': reverse_trigger_threshold_input,
                             'Double Trigger Premature Termination': premature_termination_threshold_input,
                             'Double Trigger Flow Undershoot': flow_undershoot_threshold_input}
@@ -132,11 +133,9 @@ def pass_user_input():
         vent_annotator_filepath=exe_filepath_input,
         generate_triplets_and_statics=generate_triplets_and_statics_input,
         generate_annotations=generate_annotations_input,
-        binary_threshold=binary_threshold_input,
+        binary_threshold=binary_thresholds,
         multitarget_thresholds=multilabel_thresholds
     )
-
-    print('---------Done!---------')
 
 # create button that will use arguments from entries and run function
 button1 = tk.Button(text='Click me Run', command=pass_user_input).pack()

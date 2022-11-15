@@ -95,6 +95,8 @@ def main(
             # add multitarget predictions to artifact files
             print(f'Annotated Dataset Created at {annotation_generator.annotated_dataset_directory}')
 
+            print('---------Done!---------')
+
 if __name__ == "__main__":
 
     # Command Line Arguments
