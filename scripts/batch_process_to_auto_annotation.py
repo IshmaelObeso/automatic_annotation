@@ -7,6 +7,7 @@ sys.path.append('..')
 
 from components.dataset_generation import batch_annotation_generator, spectral_triplets_generator, triplets_generator
 from components.annotation_generation import annotated_dataset_generator, annotation_model, predictions_generator
+from components.annotation_generation.utilities.model_settings import MODELS_DICT
 
 
 # This script creates annotations from raw REDVENT files
@@ -65,31 +66,25 @@ def main(
 
         if generate_annotations:
 
-            # instantiate dc model
-            dc_model_path = '.\\models\\dc_model.onnx'
-            dc_model = annotation_model.Annotation_Model(dc_model_path)
+            # instantiate models and save model objects to dict
+            for model_name, parameters in MODELS_DICT.items():
 
-            # instantiate multitarget model
-            multitarget_model_path = '.\\models\\mt_all_model.onnx'
-            multitarget_model = annotation_model.Annotation_Model(multitarget_model_path)
+                # grab model path from dict and instantiate
+                model_object = annotation_model.Annotation_Model(parameters['path'])
 
-            # make dict of models with output cols
-            models_dict = {
-                dc_model: {'name': 'Binary Double Trigger',
-                           'output_columns': ['Double Trigger'],
-                           'thresholds': binary_threshold},
-                multitarget_model: {'name': 'Multi-target ',
-                                    'output_columns': ['Double Trigger Reverse Trigger',
-                                                       'Double Trigger Premature Termination',
-                                                       'Double Trigger Flow Undershoot'],
-                                    'thresholds': multitarget_thresholds}
-            }
+                # save model object in dict
+                MODELS_DICT[model_name]['model_object'] = model_object
+
+
+            # save thresholds to models, will change this later to be good-er
+            MODELS_DICT['Binary Double Trigger']['thresholds'] = binary_threshold
+            MODELS_DICT['Multi-Target']['thresholds'] = multitarget_thresholds
 
             # instantiate predictions wrapper
             predictions_wrapper = predictions_generator.PredictionAggregator(spectral_triplets_directory=spectral_triplets_directory)
 
             # generate all predictions and output as predictions dataframe
-            predictions_df = predictions_wrapper.generate_all_predictions(models_dict=models_dict)
+            predictions_df = predictions_wrapper.generate_all_predictions(models_dict=MODELS_DICT)
 
             # instantiate annotated dataset generator
             annotation_generator = annotated_dataset_generator.AnnotatedDatasetGenerator(raw_files_directory=import_directory, spectral_triplets_directory=spectral_triplets_directory)

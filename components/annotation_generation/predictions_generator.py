@@ -54,7 +54,7 @@ class PredictionAggregator:
         prediction_dfs = []
 
         # get predictions for every model and aggregate predictions into one dataframe
-        for model, parameters in  models_dict.items():
+        for model_name, parameters in  models_dict.items():
 
             # instantiate prediction generator
             prediction_generator = PredictionGenerator(
@@ -62,7 +62,7 @@ class PredictionAggregator:
                 output_cols=parameters['output_columns'])
 
             # get predictions file for model
-            predictions_df = prediction_generator.get_predictions(model, parameters)
+            predictions_df = prediction_generator.get_predictions(model_name, parameters)
 
             # append predictions df to prediction dfs list
             prediction_dfs.append(predictions_df)
@@ -103,12 +103,12 @@ class PredictionGenerator:
 
         return predictions_df
 
-    def get_predictions(self, model, parameters):
+    def get_predictions(self, model_name, parameters):
         """ get predictions for every spectral triplet in dataset, predictions will be output as hdf file"""
 
         # get model parameters
         threshold_list = parameters['thresholds']
-        name = parameters['name']
+        model = parameters['model_object']
 
         # get model attributes
         input_name, input_shape, output_name = model.get_model_attributes()
@@ -121,7 +121,7 @@ class PredictionGenerator:
         preds_df_list = []
 
         # for every spectrogram in dataset
-        for uid in tqdm.tqdm(all_uids, desc=f'Generating {name} Predictions'):
+        for uid in tqdm.tqdm(all_uids, desc=f'Generating {model_name} Predictions'):
 
             # get spectrograms for every uid
             xs, ys, ts, uid = self.data_class.__getitem__(uid)
