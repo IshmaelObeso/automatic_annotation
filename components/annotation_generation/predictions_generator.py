@@ -84,19 +84,19 @@ class PredictionGenerator:
 
         self.output_cols = output_cols
 
-    def threshold_predictions(self, predictions_df, threshold_list):
+    def threshold_predictions(self, predictions_df, threshold_dict):
 
         """ Use a threshold to get binarized predictions for every breath"""
 
         # for every dyssynchrony threshold predictions and make new column
-        for i, output_col in enumerate(self.output_cols):
+        for output_col in self.output_cols:
 
             # get the column names
             pred_column_name = f'{output_col}_preds'
             threshold_column_name = f'{output_col}_threshold'
 
             # get the threshold
-            threshold = threshold_list[i]
+            threshold = threshold_dict[output_col]
 
             # make threshold column
             predictions_df[threshold_column_name] = (predictions_df[pred_column_name] >= threshold).astype(int)
@@ -107,7 +107,7 @@ class PredictionGenerator:
         """ get predictions for every spectral triplet in dataset, predictions will be output as hdf file"""
 
         # get model parameters
-        threshold_list = parameters['thresholds']
+        threshold_dict = parameters['thresholds']
         model = parameters['model_object']
 
         # get model attributes
@@ -159,7 +159,7 @@ class PredictionGenerator:
         preds_df = preds_df.set_index(['patient_id', 'day_id', 'breath_id'])
 
         # threshold predictions df
-        self.threshold_predictions(preds_df, threshold_list)
+        self.threshold_predictions(preds_df, threshold_dict)
 
         return preds_df
 

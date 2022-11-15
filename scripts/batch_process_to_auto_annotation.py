@@ -21,8 +21,8 @@ def main(
          import_directory,
         export_directory ='\\datasets',
          vent_annotator_filepath='.\\batch_annotator\RipVent.BatchProcessor.exe',
-         binary_threshold=[.804],
-         multitarget_thresholds=[4.8e-02, 3.2e-02, 0.71],
+         binary_threshold=None,
+         multitarget_thresholds=None,
          generate_triplets_and_statics=True,
          generate_annotations=True
          ):
@@ -106,8 +106,14 @@ if __name__ == "__main__":
                    help='Path to vent annotator')
     p.add_argument('--generate_triplets_and_statics', type=bool, default=True)
     p.add_argument('--generate_annotations', type=bool, default=True)
-    p.add_argument('--binary_threshold', type=float, default=[.804])
-    p.add_argument('--multitarget_thresholds', help='[reverse_trigger_threshold, inadequate_support_threshold]', type=list, default=[4.8e-02, 3.2e-02, 0.71])
+    p.add_argument('--binary_threshold', type=dict[str, int], default={'Double Trigger': .804})
+    p.add_argument('--multitarget_thresholds',
+                   help='[reverse_trigger_threshold, premature_termination_threshold, flow_undershoot_threshold]',
+                   type=dict[str, int],
+                   default={'Double Trigger Reverse Trigger': 4.8e-02,
+                            'Double Trigger Premature Termination': 3.2e-02,
+                            'Double Trigger Flow Undershoot': 0.71})
+
     args = vars(p.parse_args())
 
     # define args

@@ -119,9 +119,11 @@ def pass_user_input():
     premature_termination_threshold_input = min(max(float(premature_termination_threshold.get()), 0), 1)
     flow_undershoot_threshold_input = min(max(float(flow_undershoot_threshold.get()), 0), 1)
 
-    # turnthresholds to list
-    binary_thresholds = [binary_threshold_input]
-    multilabel_thresholds = [reverse_trigger_threshold_input, premature_termination_threshold_input, flow_undershoot_threshold_input]
+    # turnthresholds to dict
+    binary_thresholds = {'Double Trigger': binary_threshold_input}
+    multilabel_thresholds = {'Double Trigger Reverse Trigger': reverse_trigger_threshold_input,
+                            'Double Trigger Premature Termination': premature_termination_threshold_input,
+                            'Double Trigger Flow Undershoot': flow_undershoot_threshold_input}
 
 
     batch_process_to_auto_annotation.main(
