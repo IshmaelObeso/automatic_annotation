@@ -133,3 +133,13 @@ class Data_Cleaner:
          # else do nothing and print
         else:
             print('No patient days without TriggerAndArtifacts File Found!')
+
+    def check_for_validity(self, filter_file_info):
+        """
+        Function that takes an artifacts file and uses it to filter out patient_days that should not be included in dataset
+
+        :param directory: path to directory of patient days
+        :return:
+        """
+
+    

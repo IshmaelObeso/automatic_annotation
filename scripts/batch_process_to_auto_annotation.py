@@ -18,13 +18,14 @@ from components.annotation_generation.utilities.model_settings import MODELS_DIC
 # Then it will output those predictions to a directory with the raw files
 
 def main(
-         import_directory,
+        import_directory,
         export_directory ='\\datasets',
-         vent_annotator_filepath='.\\batch_annotator\RipVent.BatchProcessor.exe',
-         binary_threshold=None,
-         multitarget_thresholds=None,
-         generate_triplets_and_statics=True,
-         generate_annotations=True
+        vent_annotator_filepath='.\\batch_annotator\RipVent.BatchProcessor.exe',
+        binary_threshold=None,
+        multitarget_thresholds=None,
+        generate_triplets_and_statics=True,
+        generate_annotations=True,
+        filter_file_info=None,
          ):
 
     # if generate_annotations is true, then generate_triplets_and_statics must also be true
@@ -44,8 +45,9 @@ def main(
 
     if generate_triplets_and_statics:
 
-        # instantiate triplet generator class
-        triplet_generator = triplets_generator.Triplet_Generator(export_directory)
+
+        # instantiate triplet generator class, and include a filter filepath if given one
+        triplet_generator = triplets_generator.Triplet_Generator(export_directory, filter_file_info)
 
         # run triplet generator
         export_directory = triplet_generator.generate_triplets()
@@ -53,6 +55,8 @@ def main(
 
         print(f'Triplets generated at {os.path.abspath(export_directory)}')
         print(f"Statics file generated at {os.path.abspath(statics_csv_output)}")
+
+
 
         # instantiate spectral triplet generator class
         spectral_triplet_generator = spectral_triplets_generator.Spectral_Triplet_Generator(export_directory)
