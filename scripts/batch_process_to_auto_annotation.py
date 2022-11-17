@@ -76,7 +76,7 @@ def main(
                 MODELS_DICT[model_name]['model_object'] = model_object
 
 
-            # save thresholds to models, will change this later to be good-er
+            # save thresholds to models from inputs
             MODELS_DICT['Binary Double Trigger']['thresholds'] = binary_threshold
             MODELS_DICT['Multi-Target']['thresholds'] = multitarget_thresholds
 
