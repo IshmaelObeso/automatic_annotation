@@ -117,15 +117,15 @@ lbl_flow_undershoot_threshold_2 = ttk.Label(advanced_settings_tab, text='[0-1]')
 
 ## Filter Settings Tab
 # create label and checkbox for generating triplets and statics
-lbl_filter_file = ttk.Label(settings_tab, text='Use Excel File for Filtering').grid(column=0, row=1)
+lbl_filter_file = ttk.Label(filter_settings_tab, text='Use Excel File for Filtering').grid(column=0, row=1)
 use_filter_file = BooleanVar(value=False)
 ent_filter_file = ttk.Checkbutton(filter_settings_tab, variable=use_filter_file).grid(column=1, row=1, sticky='w')
 
 # create browse button to input filtering file
-lbl_filter_browse = ttk.Label(settings_tab, text='Filtering File Path').grid(column=0, row=2)
-filter_path = tk.StringVar()
-btn_filter_filepath = ttk.Button(filter_path, text='Browse', command=browse_filter_button()).grid(column=1, row=2, sticky='w')
-ent_exe_path = ttk.Entry(settings_tab, textvariable=exe_path, width=50).grid(column=2, row=2, sticky='w')
+lbl_filter_browse = ttk.Label(filter_settings_tab, text='Filtering File Path').grid(column=0, row=2)
+filter_filepath = tk.StringVar()
+btn_filter_filepath = ttk.Button(filter_settings_tab, text='Browse', command=browse_filter_button).grid(column=1, row=2, sticky='w')
+ent_filter_path = ttk.Entry(filter_settings_tab, textvariable=filter_filepath, width=50).grid(column=2, row=2, sticky='w')
 
 # create
 
@@ -153,12 +153,12 @@ def pass_user_input():
 
     # get filter inputs
     use_filter_input = use_filter_file.get()
-    filter_filepath = exe_path.get()
+    filter_filepath_input = filter_filepath.get()
 
     # make dict for filter info
     filter_info = {}
     filter_info['use'] = use_filter_input
-    filter_info['filepath'] = filter_filepath
+    filter_info['filepath'] = filter_filepath_input
     # TODO: Figure out how to best have user pass this infomation
     filter_info['exclude_columns_and_values'] = {'Reviewed by:': 'NaN', 'analysis exclusion': 'not NaN'}
 
