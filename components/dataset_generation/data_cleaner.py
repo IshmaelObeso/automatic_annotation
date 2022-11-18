@@ -1,5 +1,6 @@
 import tqdm
 import numpy as np
+import pandas as pd
 from pathlib import Path
 import shutil
 from components.dataset_generation.utilities import utils
@@ -11,9 +12,18 @@ class Data_Cleaner:
      like the triplets class.
     """
 
-    def __init__(self):
+    def __init__(self, filter_file_info=None):
 
-        pass
+        # save info about filtered tripelts if given
+        self.filter_file_info = filter_file_info
+
+        # if we want to use the filter file info, generate the pt days to exclude
+        try:
+            if self.filter_file_info['use'] == True:
+                self.exclude_pt_days = self.get_exclude_pt_days()
+        # except if filter file info is None
+        except TypeError:
+            pass
 
     def check_for_duplicate_pt_days(self, directory):
 
@@ -133,3 +143,102 @@ class Data_Cleaner:
          # else do nothing and print
         else:
             print('No patient days without TriggerAndArtifacts File Found!')
+
+    def get_exclude_pt_days(self):
+        """
+        This function takes the filter file info and saves a list of patient days to exclude from analysis
+
+        """
+
+        # get the filepath to csv filter file
+        csv_filepath = self.filter_file_info['filepath']
+        # turn info Path object if not already
+        csv_filepath = Path(csv_filepath)
+        # load csv into dataframe
+        filtering_file = pd.read_excel(csv_filepath, engine='openpyxl')
+
+        # get the columns and values we should filter over
+        columns_and_exclude_values = self.filter_file_info['exclude_columns_and_values']
+        # this dictionary must have values if the 'use' variable is true
+        assert len(
+            columns_and_exclude_values), 'If filtering with csv file, must include columns to check and values to exclude'
+
+        # get a list of patient_days that exist in the file
+        filtering_file['patient_id'] = filtering_file['File'].apply(lambda row: int(utils.get_patient_id(row)))
+        filtering_file['day_id'] = filtering_file['File'].apply(lambda row: int(utils.get_day_id(row)))
+        filtering_file['patient_day'] = tuple(zip(filtering_file['patient_id'], filtering_file['day_id']))
+
+        filtering_file_exclude = []
+
+        # get a list of those patient_days that we should filter out
+        for column, exclude_value in columns_and_exclude_values.items():
+
+            # if value is string, it must be either 'NaN' or 'not NaN'
+            if isinstance(exclude_value, str):
+                # make sure
+                assert (exclude_value == 'NaN') or (
+                            exclude_value == 'not NaN'), 'If exclude value is string, it must be either "NaN" or "not NaN" '
+
+                # if string is NaN, find rows with nan
+                if exclude_value == 'NaN':
+                    filtering_file_subset = filtering_file[filtering_file[column].isna()]
+                # if string is 'not Nan' find rows that are not nan
+                elif exclude_value == 'not NaN':
+                    filtering_file_subset = filtering_file[filtering_file[column].notna()]
+
+            else:
+                filtering_file_subset = filtering_file[filtering_file[column] != exclude_value]
+
+            filtering_file_exclude.append(filtering_file_subset)
+
+        # concat all rows we should exclude
+        filtering_file_exclude = pd.concat(filtering_file_exclude).drop_duplicates()
+
+        # get the unique patient days in this dataframe
+        exclude_pt_days = filtering_file_exclude['patient_day'].unique().tolist()
+
+        return exclude_pt_days
+
+
+    def check_for_validity(self, subdir_name):
+        """
+        Function that takes an artifacts file and uses it to filter out patient_days that should not be included in dataset
+
+        :param subdir_name: name of the triplet subdirectory
+
+        :return: bool , True if triplet should not be filtered, False if it should be filtered
+
+        """
+
+        # get the patient_id, day_id, and breath_id of the triplet
+        patient_id = utils.get_patient_id(subdir_name)
+        day_id = utils.get_day_id(subdir_name)
+
+        # save triplet information to check against csv
+        patient_day = (int(patient_id), int(day_id))
+
+        # check if filter file info exists, it always should. if not return true for every triplet
+        if self.filter_file_info is not None:
+
+            # check if we should filter out breaths
+            if self.filter_file_info['use']:
+
+                # now check if any patient_days in this subset equal the patient day we are checking
+                if patient_day in self.exclude_pt_days:
+
+                    return True
+
+                else:
+
+                    return False
+
+            # if we shouldn't use filter, return true for every breath
+            else:
+                return True
+
+        else:
+            return True
+
+
+
+    

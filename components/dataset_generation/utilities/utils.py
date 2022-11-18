@@ -365,7 +365,7 @@ def get_day_id(filename):
     # the "anything but a number" regex at the end of day_id_pattern.
     # This works for all current cases, but should be looked at carefully when more data
     # flows in (hopefully all filenames will be uniformized once this project takes off)
-    day_id_pattern = 'day(\d*)[^\d]'
+    day_id_pattern = 'day(\d*)'
 
     return re.findall(day_id_pattern, filename, flags=re.IGNORECASE)[0]
 
