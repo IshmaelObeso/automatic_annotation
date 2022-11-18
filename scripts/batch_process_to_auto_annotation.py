@@ -47,7 +47,7 @@ def main(
 
 
         # instantiate triplet generator class, and include a filter filepath if given one
-        triplet_generator = triplets_generator.Triplet_Generator(export_directory, filter_file_info)
+        triplet_generator = triplets_generator.Triplet_Generator(export_directory)
 
         # run triplet generator
         export_directory = triplet_generator.generate_triplets()
@@ -59,7 +59,7 @@ def main(
 
 
         # instantiate spectral triplet generator class
-        spectral_triplet_generator = spectral_triplets_generator.Spectral_Triplet_Generator(export_directory)
+        spectral_triplet_generator = spectral_triplets_generator.Spectral_Triplet_Generator(export_directory, filter_file_info=filter_file_info)
 
         # run spectral triplet generator
         spectral_triplets_directory = spectral_triplet_generator.generate_spectral_triplets()
@@ -78,8 +78,6 @@ def main(
 
                 # save model object in dict
                 MODELS_DICT[model_name]['model_object'] = model_object
-
-
             # save thresholds to models from inputs
             MODELS_DICT['Binary Double Trigger']['thresholds'] = binary_threshold
             MODELS_DICT['Multi-Target']['thresholds'] = multitarget_thresholds
@@ -119,6 +117,11 @@ if __name__ == "__main__":
                    default={'Double Trigger Reverse Trigger': 4.8e-02,
                             'Double Trigger Premature Termination': 3.2e-02,
                             'Double Trigger Flow Undershoot': 0.71})
+    p.add_argument('--use_filter_file', type=bool, default=False)
+    p.add_argument('--filter_filepath', type=str, default="C:\\Users\\iobeso\\Documents\\Asynchrony_Project_file__master.xlsx")
+    p.add_argument('--exclude_columns_and_values',
+                   type=dict[str, str],
+                   default={'Reviewed by:': 'NaN', 'analysis exclusion': 'not NaN'})
 
     args = vars(p.parse_args())
 
@@ -129,8 +132,18 @@ if __name__ == "__main__":
     binary_threshold = args['binary_threshold']
     multitarget_thresholds = args['multitarget_thresholds']
 
+    use_filter_file = args['use_filter_file']
+    filter_filepath = args['filter_filepath']
+    exclude_columns_and_values = args['exclude_columns_and_values']
+
     generate_triplets_and_statics = args['generate_triplets_and_statics']
     generate_annotations = args['generate_annotations']
+
+    # TESTING
+    filter_file_info = {}
+    filter_file_info['use'] = use_filter_file
+    filter_file_info['filepath'] = filter_filepath
+    filter_file_info['exclude_columns_and_values'] = exclude_columns_and_values
 
     # run main
     main(
@@ -140,6 +153,7 @@ if __name__ == "__main__":
         binary_threshold,
         multitarget_thresholds,
         generate_triplets_and_statics,
-        generate_annotations
+        generate_annotations,
+        filter_file_info
     )
 

@@ -26,7 +26,8 @@ class Triplet_Generator:
         self.batch_files_directory, self.triplet_export_directory, self.statics_output_path_csv, self.statics_output_path_hdf = self.setup_directories(batch_files_directory)
         # save filter file info
         self.filter_file_info = filter_file_info
-
+        # instantiate data cleaner
+        self.data_cleaner = Data_Cleaner()
 
 
     def setup_directories(self, batch_files_directory):
@@ -218,16 +219,10 @@ class Triplet_Generator:
     def generate_triplets(self):
 
         # before anything, check the batch files directory for errors
-        data_cleaner = Data_Cleaner()
         # check for invalid directories
-        data_cleaner.check_for_invalid_subdirs(self.batch_files_directory)
+        self.data_cleaner.check_for_invalid_subdirs(self.batch_files_directory)
         # check for duplicate patient days
-        data_cleaner.check_for_duplicate_pt_days(self.batch_files_directory)
-
-
-        # if given filter filepath, filter out files based on csv given
-        if self.filter_file_info['exists']:
-            data_cleaner.check_for_validity(self.filter_file_info)
+        self.data_cleaner.check_for_duplicate_pt_days(self.batch_files_directory)
 
 
         # Grab the triplet folders from their directories
