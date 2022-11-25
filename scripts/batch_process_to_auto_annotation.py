@@ -21,12 +21,16 @@ def main(
         import_directory,
         export_directory ='\\datasets',
         vent_annotator_filepath='.\\batch_annotator\RipVent.BatchProcessor.exe',
-        binary_threshold=None,
-        multitarget_thresholds=None,
+        thresholds_dict=None,
         generate_triplets_and_statics=True,
         generate_annotations=True,
         filter_file_info=None,
          ):
+
+    # # save thresholds to models from inputs
+    for model, threshold in thresholds_dict.items():
+
+        MODELS_DICT[model]['threshold'] = threshold
 
     # if generate_annotations is true, then generate_triplets_and_statics must also be true
     if (generate_annotations is True) and (generate_triplets_and_statics is False):
@@ -78,9 +82,6 @@ def main(
 
                 # save model object in dict
                 MODELS_DICT[model_name]['model_object'] = model_object
-            # save thresholds to models from inputs
-            MODELS_DICT['Binary Double Trigger']['thresholds'] = binary_threshold
-            MODELS_DICT['Multi-Target']['thresholds'] = multitarget_thresholds
 
             # instantiate predictions wrapper
             predictions_wrapper = predictions_generator.PredictionAggregator(spectral_triplets_directory=spectral_triplets_directory)
@@ -91,8 +92,8 @@ def main(
             # instantiate annotated dataset generator
             annotation_generator = annotated_dataset_generator.AnnotatedDatasetGenerator(raw_files_directory=import_directory, spectral_triplets_directory=spectral_triplets_directory)
 
-            # create artifact file from binary predictions
-            annotation_generator.create_art_files(predictions_df)
+            # create artifact file from binary predictions and info from model settings
+            annotation_generator.create_art_files(predictions_df, models_dict=MODELS_DICT)
 
             # add multitarget predictions to artifact files
             print(f'Annotated Dataset Created at {annotation_generator.annotated_dataset_directory}')
@@ -110,13 +111,12 @@ if __name__ == "__main__":
                    help='Path to vent annotator')
     p.add_argument('--generate_triplets_and_statics', type=bool, default=True)
     p.add_argument('--generate_annotations', type=bool, default=True)
-    p.add_argument('--binary_threshold', type=dict[str, int], default={'Double Trigger': .804})
-    p.add_argument('--multitarget_thresholds',
-                   help='[reverse_trigger_threshold, premature_termination_threshold, flow_undershoot_threshold]',
-                   type=dict[str, int],
-                   default={'Double Trigger Reverse Trigger': 4.8e-02,
-                            'Double Trigger Premature Termination': 3.2e-02,
-                            'Double Trigger Flow Undershoot': 0.71})
+    p.add_argument('--double_trigger_threshold', type=float, default=.5)
+    p.add_argument('--auto_trigger_threshold', type=float, default=.5)
+    p.add_argument('--delayed_termination_threshold', type=float, default=.5)
+    p.add_argument('--flow_undershoot_threshold', type=float, default=.5)
+    p.add_argument('--premature_termination_threshold', type=float, default=.5)
+    p.add_argument('--reverse_trigger_threshold', type=float, default=.5)
     p.add_argument('--use_filter_file', type=bool, default=False)
     p.add_argument('--filter_filepath', type=str, default="C:\\Users\\iobeso\\Documents\\Asynchrony_Project_file__master.xlsx")
     p.add_argument('--exclude_columns_and_values',
@@ -129,29 +129,40 @@ if __name__ == "__main__":
     import_directory = args['import_directory']
     export_directory = args['export_directory']
     vent_annotator_filepath = args['batch_processor_exe_filepath']
-    binary_threshold = args['binary_threshold']
-    multitarget_thresholds = args['multitarget_thresholds']
-
     use_filter_file = args['use_filter_file']
     filter_filepath = args['filter_filepath']
     exclude_columns_and_values = args['exclude_columns_and_values']
-
     generate_triplets_and_statics = args['generate_triplets_and_statics']
     generate_annotations = args['generate_annotations']
+    # threshold args
+    double_trigger_threshold = args['double_trigger_threshold']
+    auto_trigger_threshold = args['auto_trigger_threshold']
+    delayed_termination_threshold = args['delayed_termination_threshold']
+    flow_undershoot_threshold = args['flow_undershoot_threshold']
+    premature_termination_threshold = args['premature_termination_threshold']
+    reverse_trigger_threshold = args['reverse_trigger_threshold']
 
-    # TESTING
+    # define filter file info dict
     filter_file_info = {}
     filter_file_info['use'] = use_filter_file
     filter_file_info['filepath'] = filter_filepath
     filter_file_info['exclude_columns_and_values'] = exclude_columns_and_values
+
+    # define threshold dict
+    threshold_dict = {}
+    threshold_dict['Double Trigger'] = {'Double Trigger': double_trigger_threshold}
+    threshold_dict['AutoTrigger'] = {'Autotrigger': auto_trigger_threshold}
+    threshold_dict['Delayed Termination'] = {'Delayed Termination': delayed_termination_threshold}
+    threshold_dict['Flow Undershoot'] = {'Flow Undershoot': flow_undershoot_threshold}
+    threshold_dict['Premature Termination'] = {'Premature Termination': premature_termination_threshold}
+    threshold_dict['Reverse Trigger'] = {'Reverse Trigger': reverse_trigger_threshold}
 
     # run main
     main(
         import_directory,
         export_directory,
         vent_annotator_filepath,
-        binary_threshold,
-        multitarget_thresholds,
+        threshold_dict,
         generate_triplets_and_statics,
         generate_annotations,
         filter_file_info

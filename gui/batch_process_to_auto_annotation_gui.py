@@ -88,32 +88,46 @@ ent_generate_annotations = ttk.Checkbutton(settings_tab, variable=generate_annot
 
 ## Advanced Settings Tab
 # create label and entry field for Double Trigger Threshold
-lbl_binary_threshold = ttk.Label(advanced_settings_tab, text='Double Trigger Threshold').grid(column=0, row=0)
-binary_threshold = tk.StringVar()
-binary_threshold.set('.804')
-ent_binary_threshold = ttk.Entry(advanced_settings_tab, textvariable=binary_threshold).grid(column=1, row=0, sticky='w')
-lbl_binary_threshold_2 = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=0, sticky='w')
+lbl_double_trigger_threshold = ttk.Label(advanced_settings_tab, text='Double Trigger Threshold').grid(column=0, row=0)
+double_trigger_threshold = tk.StringVar()
+double_trigger_threshold.set('.5')
+ent_double_trigger_threshold = ttk.Entry(advanced_settings_tab, textvariable=double_trigger_threshold).grid(column=1, row=0, sticky='w')
+lbl_double_trigger_threshold_info = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=0, sticky='w')
 
-# create label and entry field for Reverse Trigger Threshold
-lbl_reverse_trigger_threshold = ttk.Label(advanced_settings_tab, text='Reverse Trigger Threshold').grid(column=0, row=1)
-reverse_trigger_threshold = tk.StringVar()
-reverse_trigger_threshold.set('4.8e-02')
-ent_reverse_trigger_threshold = ttk.Entry(advanced_settings_tab, textvariable=reverse_trigger_threshold).grid(column=1, row=1, sticky='w')
-lbl_reverse_trigger_threshold__2 = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=1, sticky='w')
+# create label and entry field for Auto Trigger Threshold
+lbl_auto_trigger_threshold = ttk.Label(advanced_settings_tab, text='Auto Trigger Threshold').grid(column=0, row=1)
+auto_trigger_threshold = tk.StringVar()
+auto_trigger_threshold.set('.5')
+ent_auto_trigger_threshold = ttk.Entry(advanced_settings_tab, textvariable=auto_trigger_threshold).grid(column=1, row=1, sticky='w')
+lbl_auto_trigger_threshold_info = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=1, sticky='w')
 
-# create label and entry field for Premature Termination Threshold
-lbl_premature_termination_threshold = ttk.Label(advanced_settings_tab, text='Premature Termination Threshold').grid(column=0, row=2)
-premature_termination_threshold = tk.StringVar()
-premature_termination_threshold.set('3.2e-02')
-ent_premature_termination_threshold = ttk.Entry(advanced_settings_tab, textvariable=premature_termination_threshold).grid(column=1, row=2, sticky='w')
-lbl_premature_termination_threshold_2 = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=2, sticky='w')
+# create label and entry field for Delayed Termination Threshold
+lbl_delayed_termination_threshold = ttk.Label(advanced_settings_tab, text='Delayed Termination Threshold').grid(column=0, row=2)
+delayed_termination_threshold = tk.StringVar()
+delayed_termination_threshold.set('.5')
+ent_delayed_termination_threshold = ttk.Entry(advanced_settings_tab, textvariable=delayed_termination_threshold).grid(column=1, row=2, sticky='w')
+lbl_delayed_termination_threshold_info = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=2, sticky='w')
 
 # create label and entry field for Flow Undershoot Threshold
 lbl_flow_undershoot_threshold = ttk.Label(advanced_settings_tab, text='Flow Undershoot Threshold').grid(column=0, row=3)
 flow_undershoot_threshold = tk.StringVar()
-flow_undershoot_threshold.set('0.71')
+flow_undershoot_threshold.set('.5')
 ent_flow_undershoot_threshold = ttk.Entry(advanced_settings_tab, textvariable=flow_undershoot_threshold).grid(column=1, row=3, sticky='w')
-lbl_flow_undershoot_threshold_2 = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=3, sticky='w')
+lbl_flow_undershoot_threshold_info = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=3, sticky='w')
+
+# create label and entry field for Premature Termination Threshold
+lbl_premature_termination_threshold = ttk.Label(advanced_settings_tab, text='Premature Termination Threshold').grid(column=0, row=4)
+premature_termination_threshold = tk.StringVar()
+premature_termination_threshold.set('.5')
+ent_premature_termination_threshold = ttk.Entry(advanced_settings_tab, textvariable=premature_termination_threshold).grid(column=1, row=4, sticky='w')
+lbl_premature_termination_threshold_info = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=4, sticky='w')
+
+# create label and entry field for Reverse Trigger Threshold
+lbl_reverse_trigger_threshold = ttk.Label(advanced_settings_tab, text='Reverse Trigger Threshold').grid(column=0, row=5)
+reverse_trigger_threshold = tk.StringVar()
+reverse_trigger_threshold.set('.5')
+ent_reverse_trigger_threshold = ttk.Entry(advanced_settings_tab, textvariable=reverse_trigger_threshold).grid(column=1, row=5, sticky='w')
+lbl_reverse_trigger_threshold_info = ttk.Label(advanced_settings_tab, text='[0-1]').grid(column=2, row=5, sticky='w')
 
 ## Filter Settings Tab
 # create label and checkbox for generating triplets and statics
@@ -139,17 +153,21 @@ def pass_user_input():
     generate_annotations_input = generate_annotations.get()
 
     # get threshold inputs, convert strings to float, set min to 0, set max to 1
-    binary_threshold_input = min(max(float(binary_threshold.get()), 0), 1)
-    reverse_trigger_threshold_input = min(max(float(reverse_trigger_threshold.get()), 0), 1)
-    premature_termination_threshold_input = min(max(float(premature_termination_threshold.get()), 0), 1)
+    double_trigger_threshold_input = min(max(float(double_trigger_threshold.get()), 0), 1)
+    auto_trigger_threshold_input = min(max(float(auto_trigger_threshold.get()), 0), 1)
+    delayed_termination_threshold_input = min(max(float(delayed_termination_threshold.get()), 0), 1)
     flow_undershoot_threshold_input = min(max(float(flow_undershoot_threshold.get()), 0), 1)
+    premature_termination_threshold_input = min(max(float(premature_termination_threshold.get()), 0), 1)
+    reverse_trigger_threshold_input = min(max(float(reverse_trigger_threshold.get()), 0), 1)
 
-    # turnthresholds to dict
-    binary_thresholds = {'Double Trigger': binary_threshold_input}
-
-    multilabel_thresholds = {'Double Trigger Reverse Trigger': reverse_trigger_threshold_input,
-                            'Double Trigger Premature Termination': premature_termination_threshold_input,
-                            'Double Trigger Flow Undershoot': flow_undershoot_threshold_input}
+    # turn thresholds to dict
+    threshold_dict = {}
+    threshold_dict['Double Trigger'] = {'Double Trigger': double_trigger_threshold_input}
+    threshold_dict['AutoTrigger'] = {'Autotrigger': auto_trigger_threshold_input}
+    threshold_dict['Delayed Termination'] = {'Delayed Termination': delayed_termination_threshold_input}
+    threshold_dict['Flow Undershoot'] = {'Flow Undershoot': flow_undershoot_threshold_input}
+    threshold_dict['Premature Termination'] = {'Premature Termination': premature_termination_threshold_input}
+    threshold_dict['Reverse Trigger'] = {'Reverse Trigger': reverse_trigger_threshold_input}
 
     # get filter inputs
     use_filter_input = use_filter_file.get()
@@ -170,8 +188,7 @@ def pass_user_input():
         vent_annotator_filepath=exe_filepath_input,
         generate_triplets_and_statics=generate_triplets_and_statics_input,
         generate_annotations=generate_annotations_input,
-        binary_threshold=binary_thresholds,
-        multitarget_thresholds=multilabel_thresholds,
+        thresholds_dict=threshold_dict,
         filter_file_info=filter_info
     )
 

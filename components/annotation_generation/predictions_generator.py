@@ -54,18 +54,20 @@ class PredictionAggregator:
         prediction_dfs = []
 
         # get predictions for every model and aggregate predictions into one dataframe
-        for model_name, parameters in  models_dict.items():
+        for model_name, parameters in models_dict.items():
 
-            # instantiate prediction generator
-            prediction_generator = PredictionGenerator(
-                spectral_triplet_directory=self.spectral_triplets_directory,
-                output_cols=parameters['output_columns'])
+            if parameters['use']:
 
-            # get predictions file for model
-            predictions_df = prediction_generator.get_predictions(model_name, parameters)
+                # instantiate prediction generator
+                prediction_generator = PredictionGenerator(
+                    spectral_triplet_directory=self.spectral_triplets_directory,
+                    output_cols=parameters['output_columns'])
 
-            # append predictions df to prediction dfs list
-            prediction_dfs.append(predictions_df)
+                # get predictions file for model
+                predictions_df = prediction_generator.get_predictions(model_name, parameters)
+
+                # append predictions df to prediction dfs list
+                prediction_dfs.append(predictions_df)
 
         # make large df from list of smaller dfs
         predictions_df = pd.concat(prediction_dfs, axis=1)
@@ -107,7 +109,7 @@ class PredictionGenerator:
         """ get predictions for every spectral triplet in dataset, predictions will be output as hdf file"""
 
         # get model parameters
-        threshold_dict = parameters['thresholds']
+        threshold_dict = parameters['threshold']
         model = parameters['model_object']
 
         # get model attributes
