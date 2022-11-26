@@ -1,10 +1,11 @@
 import os
 import csv
 import tqdm
+import sys
 from datetime import datetime
 from pathlib import Path
 import argparse
-
+from components.dataset_generation.data_cleaner import Data_Cleaner
 
 
 class Batch_Annotator:
@@ -22,8 +23,11 @@ class Batch_Annotator:
 
     def __init__(self, import_directory, export_directory='..\\datasets', RipVentBatchAnnotator_filepath = '..\\batch_annotator\RipVent.BatchProcessor.exe'):
 
-        # # setup import and export directories
-        self.import_directory, self.export_directory, self.RipVentBatchAnnotator_filepath = self.setup_directories(import_directory, export_directory, RipVentBatchAnnotator_filepath)
+        # setup directories
+        self.import_directory = import_directory
+        self.export_directory = export_directory
+        self.RipVentBatchAnnotator_filepath = RipVentBatchAnnotator_filepath
+
     def setup_directories(self, import_directory, export_directory, exe_path):
 
         # define paths
@@ -32,43 +36,44 @@ class Batch_Annotator:
         exe_path = Path(exe_path.replace('"', '').replace("'", ''))
 
         # make export directory with timestamp
-        export_directory = Path(export_directory, str(datetime.now()).replace(':', '-').replace(' ', ','), 'batch_outputs')
+        export_directory = Path(export_directory, str(datetime.now()).replace(':', '-').replace(' ', '_'), 'batch_outputs')
         export_directory.mkdir(parents=True, exist_ok=True)
 
         return import_directory.resolve(), export_directory.resolve(), exe_path.resolve()
 
-    def create_batch_csv(self):
+    def create_batch_csv(self, import_directory, export_directory):
 
         ## create a csv file which will tell the batchprocessor to run across all files
         # save a list of each filename in the entry directory
-        batch_csv = [x.name for x in self.import_directory.iterdir()]
+        batch_csv = [x.name for x in import_directory.iterdir()]
 
         # batch annotator expects a blank space in the beginning of csv file so one is created
         batch_csv.insert(0, '')
         # write csv file to current directory for batch annotator to use
-        batch_csv_filepath = Path(self.export_directory, 'batch_csv.csv')
+        batch_csv_filepath = Path(export_directory, 'batch_csv.csv')
         with open(batch_csv_filepath, 'w') as f:
             writer = csv.writer(f)
             writer.writerows(zip(batch_csv))
 
-        # save batch csv to attribute
-        self.batch_csv = batch_csv
-        self.batch_csv_filepath = batch_csv_filepath
+        # return batch csv filepath
+        batch_csv_filepath = batch_csv_filepath
+
+        return batch_csv_filepath
 
 
-    def run_batch_processor(self):
+    def run_batch_processor(self, import_directory, batch_csv_filepath, RipVentBatchAnnotator_filepath):
 
         # run batch annotator and add read to allow for it to finish before moving on
-        command = str(self.RipVentBatchAnnotator_filepath) + ' ' + str(self.import_directory) + ' ' + str(self.import_directory) + ' ' + str(self.batch_csv_filepath)
+        command = str(RipVentBatchAnnotator_filepath) + ' ' + str(import_directory) + ' ' + str(import_directory) + ' ' + str(batch_csv_filepath)
         os.popen(command).read()
 
 
-    def delete_csv(self):
+    def delete_csv(self, batch_csv_filepath):
 
         # if we created a csv file we will remove it
-        self.batch_csv_filepath.unlink()
+        batch_csv_filepath.unlink()
 
-    def move_files_to_export_dir(self):
+    def move_files_to_export_dir(self, import_directory, export_directory):
 
         # list we will save files to export in
         export_files = []
@@ -77,10 +82,10 @@ class Batch_Annotator:
 
         for export in exports:
             export_files.extend(
-                list(self.import_directory.glob('*.'+export+'.csv')))
+                list(import_directory.glob('*.'+export+'.csv')))
 
         # all files that end in a .fit are export files
-        export_files.extend(list(self.import_directory.glob('*.fit')))
+        export_files.extend(list(import_directory.glob('*.fit')))
 
         # move these saved files to the export directory
         for export_file in tqdm.tqdm(export_files, desc='Files Moved'):
@@ -88,15 +93,15 @@ class Batch_Annotator:
             # define current export filepath
             export_filepath = Path(export_file)
             # define desired export filepath
-            new_export_filepath = Path(self.export_directory, export_filepath.name)
+            new_export_filepath = Path(export_directory, export_filepath.name)
             # move file
             export_filepath.rename(new_export_filepath)
 
 
-    def organize_export_dir(self):
+    def organize_export_dir(self, export_directory):
 
         # Grab the file names from the export directory
-        unstructured_file_names = [x.name for x in self.export_directory.iterdir() if x.is_file()]
+        unstructured_file_names = [x.name for x in export_directory.iterdir() if x.is_file()]
 
         # Get the unique set of file prefixes
         new_subdir_names = set([name.split('.')[0] for name in unstructured_file_names])
@@ -104,7 +109,7 @@ class Batch_Annotator:
         for new_subdir in tqdm.tqdm(new_subdir_names, desc='Files Organized'):
 
             # define new subdir path
-            new_subdir = Path(self.export_directory, new_subdir)
+            new_subdir = Path(export_directory, new_subdir)
             # make subdir
             new_subdir.mkdir()
 
@@ -112,36 +117,64 @@ class Batch_Annotator:
                 # import pdb; pdb.set_trace()
                 if new_subdir.name == unstructured_file_name.split('.')[0]:
                     # define current unstructured_file_name path
-                    unstructured_file_name_path = Path(self.export_directory, unstructured_file_name)
+                    unstructured_file_name_path = Path(export_directory, unstructured_file_name)
                     # define desired export filepath
                     export_filepath = Path(new_subdir, unstructured_file_name)
                     # move file
                     unstructured_file_name_path.rename(export_filepath)
 
-
-
-
-
-    def batch_process(self):
+    def batch_process(self, raw_import_directory, raw_export_directory, raw_RipVentBatchAnnotator_filepath):
 
         print('Batch Processing Starting!')
 
+        # # setup import and export directories
+        import_directory, export_directory, RipVentBatchAnnotator_filepath = self.setup_directories(raw_import_directory, raw_export_directory, raw_RipVentBatchAnnotator_filepath)
+
         # put methods together to run batch processor
-        self.create_batch_csv()
+        batch_csv_filepath = self.create_batch_csv(import_directory, export_directory)
         print('Creating Batch Files')
-        self.run_batch_processor()
+        self.run_batch_processor(import_directory, batch_csv_filepath, RipVentBatchAnnotator_filepath)
         print('Batch File Creation Finished')
-        self.delete_csv()
+        self.delete_csv(batch_csv_filepath)
         print('Moving Batch Files to Export dir')
-        self.move_files_to_export_dir()
+        self.move_files_to_export_dir(import_directory, export_directory)
         print('Batch Files Moved')
         print('Organizing Batch Files')
-        self.organize_export_dir()
+        self.organize_export_dir(export_directory)
         print('Batch Files Organized')
         print('Batch Processing Done!')
 
         # return export directory for ease of use
-        return self.export_directory
+        return export_directory
+
+    def batch_process_and_validate(self):
+
+        # instantiate data cleaner
+        data_cleaner = Data_Cleaner()
+
+        # batch process files
+        export_directory = self.batch_process(self.import_directory, self.export_directory, self.RipVentBatchAnnotator_filepath)
+
+        ## check the batch files directory for errors
+
+        # check for duplicate patient days
+        data_cleaner.check_for_duplicate_pt_days(export_directory)
+
+        # check for invalid directories
+        num_invalid, invalid_dir = data_cleaner.check_for_invalid_subdirs(export_directory)
+
+        # while the number of invalid files is greater than 0, run the batch processor over the invalid files to fix them
+        while num_invalid > 0:
+
+            # batch process files
+            self.batch_process(invalid_dir, self.export_directory, self.RipVentBatchAnnotator_filepath)
+
+            # check the num invalid again
+            num_invalid, invalid_dir = data_cleaner.check_for_invalid_subdirs(export_directory)
+
+        # return export directory for other functions
+        return export_directory
+
 
 # if running this file directly, only do batch processing
 if __name__ == "__main__":

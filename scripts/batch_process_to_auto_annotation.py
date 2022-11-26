@@ -45,10 +45,9 @@ def main(
     batch_annotator = batch_annotation_generator.Batch_Annotator(import_directory, export_directory, vent_annotator_filepath)
 
     # run batch annotator, save the directory it exports the batch annotations to
-    export_directory = batch_annotator.batch_process()
+    export_directory = batch_annotator.batch_process_and_validate()
 
     if generate_triplets_and_statics:
-
 
         # instantiate triplet generator class, and include a filter filepath if given one
         triplet_generator = triplets_generator.Triplet_Generator(export_directory)

@@ -4,7 +4,7 @@ import numpy as np
 import argparse
 from pathlib import Path
 from components.dataset_generation.utilities import utils, deltaPes_utils
-from components.dataset_generation.data_cleaner import Data_Cleaner
+
 
 
 class Triplet_Generator:
@@ -26,8 +26,6 @@ class Triplet_Generator:
         self.batch_files_directory, self.triplet_export_directory, self.statics_output_path_csv, self.statics_output_path_hdf = self.setup_directories(batch_files_directory)
         # save filter file info
         self.filter_file_info = filter_file_info
-        # instantiate data cleaner
-        self.data_cleaner = Data_Cleaner()
 
 
     def setup_directories(self, batch_files_directory):
@@ -217,13 +215,6 @@ class Triplet_Generator:
         all_patient_day_statics.to_csv(self.statics_output_path_csv)
 
     def generate_triplets(self):
-
-        # before anything, check the batch files directory for errors
-        # check for invalid directories
-        self.data_cleaner.check_for_invalid_subdirs(self.batch_files_directory)
-        # check for duplicate patient days
-        self.data_cleaner.check_for_duplicate_pt_days(self.batch_files_directory)
-
 
         # Grab the triplet folders from their directories
         p = Path(self.batch_files_directory)

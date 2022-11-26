@@ -129,20 +129,34 @@ class Data_Cleaner:
             # after looping, move all invalid subdirectories into invalid directory
             # setup invalid subdir
             invalid_dir = Path(directory, 'invalid')
+            # if the invalid subdir exists already, delete it and its contents before remaking it and filling it
+            if invalid_dir.isdir():
+                shutil.rmtree(invalid_dir)
+            # setup directory
             invalid_dir.mkdir(parents=True, exist_ok=True)
 
             # loop through all subdirectories that need to be moved
             for invalid_subdir in invalid_subdirs:
 
+                # grab the files from those subdirectories and move them into the invalid folder
                 orig_invalid_subdir_path = Path(directory, invalid_subdir)
-                new_invalid_subdir_path = Path(invalid_dir, invalid_subdir)
-                shutil.move(orig_invalid_subdir_path, new_invalid_subdir_path)
+                orig_invalid_file_paths = [f for f in orig_invalid_subdir_path.iterdir() if f.isfile()]
+
+                # move each file from subdir into invalid folder (There should only be 1 per folder, but loop just in case)
+                for orig_invalid_file_path in orig_invalid_file_paths:
+
+                    new_invalid_file_path = Path(invalid_dir, orig_invalid_file_path.name)
+                    shutil.move(orig_invalid_file_path, new_invalid_file_path)
 
             # print that duplicats were found, and which ones
             print(f'{num_invalid} patient days with no TriggersAndArtifacts File found! Moved to {invalid_dir}')
+
+            return num_invalid, invalid_dir
+
          # else do nothing and print
         else:
             print('No patient days without TriggerAndArtifacts File Found!')
+            return num_invalid, None
 
     def get_exclude_pt_days(self):
         """
