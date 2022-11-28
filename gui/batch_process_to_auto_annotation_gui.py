@@ -87,7 +87,7 @@ generate_annotations = BooleanVar(value=True)
 ent_generate_annotations = ttk.Checkbutton(settings_tab, variable=generate_annotations).grid(column=1, row=4, sticky='w')
 
 # create label and checkbox for deleting triplets and spectral triplets after generating statics
-lbl_delete_triplets = ttk.Label(settings_tab, text='Delete Triplets and Spectral Triplets after generating statics').grid(column=0, row=5)
+lbl_delete_triplets = ttk.Label(settings_tab, text='Delete Triplets and Spectral Triplets \n         after generating statics').grid(column=0, row=5)
 delete_triplets = BooleanVar(value=False)
 ent_delete_triplets = ttk.Checkbutton(settings_tab, variable=delete_triplets).grid(column=1, row=5, sticky='w')
 
