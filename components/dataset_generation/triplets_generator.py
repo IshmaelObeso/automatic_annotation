@@ -213,11 +213,11 @@ class Triplet_Generator:
 
         # save out statics files to triplets export directory
         all_patient_day_statics.to_hdf(Path(self.triplet_export_directory, 'statics.hdf'), key='statics')
-        all_patient_day_statics.to_csv(Path(self.triplet_export_directory, 'statics.csv'), key='statics')
+        all_patient_day_statics.to_csv(Path(self.triplet_export_directory, 'statics.csv'))
 
         # save out statics files to statics directory
         all_patient_day_statics.to_hdf(Path(self.statics_directory, 'statics.hdf'), key='statics')
-        all_patient_day_statics.to_csv(Path(self.statics_directory, 'statics.csv'), key='statics')
+        all_patient_day_statics.to_csv(Path(self.statics_directory, 'statics.csv'))
 
     def generate_triplets(self):
 

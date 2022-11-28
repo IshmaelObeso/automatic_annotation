@@ -184,11 +184,11 @@ class Spectral_Triplet_Generator:
 
         # save out statics files to spectral triplets export directory
         statics.to_hdf(Path(self.spectral_triplet_export_directory, 'spectral_statics.hdf'), key='statics')
-        statics.to_csv(Path(self.spectral_triplet_export_directory, 'spectral_statics.csv'), key='statics')
+        statics.to_csv(Path(self.spectral_triplet_export_directory, 'spectral_statics.csv'))
 
         # save out statics files to statics directory
         statics.to_hdf(Path(self.statics_directory, 'spectral_statics.hdf'), key='statics')
-        statics.to_csv(Path(self.statics_directory, 'spectral_statics.csv'), key='statics')
+        statics.to_csv(Path(self.statics_directory, 'spectral_statics.csv'))
 
 
     def generate_spectral_triplets(self):

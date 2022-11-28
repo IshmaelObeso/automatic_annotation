@@ -104,13 +104,18 @@ def main(
     # finally delete triplets and spectral triplets directory if cleanup is selected
     if generate_triplets_and_statics and delete_triplets_and_spectral_triplets:
 
+        print('Deleting Triplets and Spectral Triplets Folders')
+
         # if triplets directory exists, delete it and its contents
         if triplet_export_directory.is_dir():
             shutil.rmtree(triplet_export_directory)
+            print('Triplets Folder Deleted')
         # if spectral triplets directory exists, delete it and its contents
         if spectral_triplets_export_directory.is_dir():
             shutil.rmtree(spectral_triplets_export_directory)
+            print('Spectral Triplets Folder Deleted')
 
+    print('----DONE----')
 if __name__ == "__main__":
 
     # Command Line Arguments
