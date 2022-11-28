@@ -86,6 +86,11 @@ lbl_generate_annotations = ttk.Label(settings_tab, text='Generate Annotations').
 generate_annotations = BooleanVar(value=True)
 ent_generate_annotations = ttk.Checkbutton(settings_tab, variable=generate_annotations).grid(column=1, row=4, sticky='w')
 
+# create label and checkbox for deleting triplets and spectral triplets after generating statics
+lbl_delete_triplets = ttk.Label(settings_tab, text='Delete Triplets and Spectral Triplets after generating statics').grid(column=0, row=5)
+delete_triplets = BooleanVar(value=False)
+ent_delete_triplets = ttk.Checkbutton(settings_tab, variable=delete_triplets).grid(column=1, row=5, sticky='w')
+
 ## Advanced Settings Tab
 # create label and entry field for Double Trigger Threshold
 lbl_double_trigger_threshold = ttk.Label(advanced_settings_tab, text='Double Trigger Threshold').grid(column=0, row=0)
@@ -151,6 +156,7 @@ def pass_user_input():
     exe_filepath_input = exe_path.get()
     generate_triplets_and_statics_input = generate_triplets_and_statics.get()
     generate_annotations_input = generate_annotations.get()
+    delete_triplets_input = delete_triplets.get()
 
     # get threshold inputs, convert strings to float, set min to 0, set max to 1
     double_trigger_threshold_input = min(max(float(double_trigger_threshold.get()), 0), 1)
@@ -189,7 +195,8 @@ def pass_user_input():
         generate_triplets_and_statics=generate_triplets_and_statics_input,
         generate_annotations=generate_annotations_input,
         thresholds_dict=threshold_dict,
-        filter_file_info=filter_info
+        filter_file_info=filter_info,
+        delete_triplets_and_spectral_triplets=delete_triplets_input
     )
 
 # create button that will use arguments from entries and run function

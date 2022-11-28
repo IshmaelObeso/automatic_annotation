@@ -23,7 +23,7 @@ class Triplet_Generator:
     def __init__(self, batch_files_directory, filter_file_info=None):
 
         # # setup import and export directories
-        self.batch_files_directory, self.triplet_export_directory, self.statics_output_path_csv, self.statics_output_path_hdf = self.setup_directories(batch_files_directory)
+        self.batch_files_directory, self.triplet_export_directory, self.statics_directory = self.setup_directories(batch_files_directory)
         # save filter file info
         self.filter_file_info = filter_file_info
 
@@ -37,14 +37,14 @@ class Triplet_Generator:
         batch_files_parent_directory = batch_files_directory.parents[0]
         triplet_export_directory = Path(batch_files_parent_directory, 'triplets')
 
+        # create directory for statics files
+        statics_directory = Path(batch_files_parent_directory, 'statics')
+
         # create export directory
         triplet_export_directory.mkdir(parents=True, exist_ok=True)
+        statics_directory.mkdir(parents=True, exist_ok=True)
 
-        # setup statics output path
-        statics_output_path_csv = Path(triplet_export_directory, 'statics.csv')
-        statics_output_path_hdf = Path(triplet_export_directory, 'statics.hdf')
-
-        return batch_files_directory.resolve(), triplet_export_directory.resolve(), statics_output_path_csv.resolve(), statics_output_path_hdf.resolve()
+        return batch_files_directory.resolve(), triplet_export_directory.resolve(), statics_directory.resolve()
 
 
     def get_patient_day(self, subdir_name):
@@ -211,8 +211,13 @@ class Triplet_Generator:
         # put deltaPes information into statics file
         all_patient_day_statics = self.add_deltaPes_to_statics(all_patient_day_statics, deltaPes_list, has_deltaPes)
 
-        all_patient_day_statics.to_hdf(self.statics_output_path_hdf, key='statics')
-        all_patient_day_statics.to_csv(self.statics_output_path_csv)
+        # save out statics files to triplets export directory
+        all_patient_day_statics.to_hdf(Path(self.triplet_export_directory, 'statics.hdf'), key='statics')
+        all_patient_day_statics.to_csv(Path(self.triplet_export_directory, 'statics.csv'), key='statics')
+
+        # save out statics files to statics directory
+        all_patient_day_statics.to_hdf(Path(self.statics_directory, 'statics.hdf'), key='statics')
+        all_patient_day_statics.to_csv(Path(self.statics_directory, 'statics.csv'), key='statics')
 
     def generate_triplets(self):
 

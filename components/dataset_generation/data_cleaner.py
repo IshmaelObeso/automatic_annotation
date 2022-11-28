@@ -130,7 +130,7 @@ class Data_Cleaner:
             # setup invalid subdir
             invalid_dir = Path(directory, 'invalid')
             # if the invalid subdir exists already, delete it and its contents before remaking it and filling it
-            if invalid_dir.isdir():
+            if invalid_dir.is_dir():
                 shutil.rmtree(invalid_dir)
             # setup directory
             invalid_dir.mkdir(parents=True, exist_ok=True)

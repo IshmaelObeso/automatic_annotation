@@ -28,7 +28,7 @@ class Spectral_Triplet_Generator:
     def __init__(self, triplet_directory, filter_file_info=None):
 
         # # setup import and export directories
-        self.triplet_directory, self.spectral_triplet_export_directory, self.triplet_statics_path, self.statics_output_path_csv, self.statics_output_path_hdf = self.setup_directories(triplet_directory)
+        self.triplet_directory, self.spectral_triplet_export_directory, self.triplet_statics_path, self.statics_directory = self.setup_directories(triplet_directory)
 
         # get triplet statics file path
         self.triplet_statics = Path(triplet_directory, 'statics.hdf')
@@ -45,20 +45,21 @@ class Spectral_Triplet_Generator:
         triplets_parent_directory = triplet_directory.parents[0]
         spectral_triplet_export_directory = Path(triplets_parent_directory, 'spectral_triplets')
 
+        # create directory for statics files
+        statics_directory = Path(triplets_parent_directory, 'statics')
+
+
+
         spectral_triplet_export_directory.mkdir(parents=True, exist_ok=True)
+        statics_directory.mkdir(parents=True, exist_ok=True)
 
         # get the triplet statics file path
         triplet_statics_path = Path(triplet_directory, 'statics.hdf')
 
-        # setup statics output path
-        statics_output_path_csv = Path(spectral_triplet_export_directory, 'spectral_statics.csv')
-        statics_output_path_hdf = Path(spectral_triplet_export_directory, 'spectral_statics.hdf')
-
         return triplet_directory.resolve(),\
                spectral_triplet_export_directory.resolve(),\
                triplet_statics_path.resolve(),\
-               statics_output_path_csv.resolve(),\
-               statics_output_path_hdf.resolve()
+               statics_directory.resolve()
 
     def setup_spectral_subdirectories(self, subdir_name):
 
@@ -181,9 +182,13 @@ class Spectral_Triplet_Generator:
         # the breaths that have been filtered out by Ben's csv file have been flagged and the rest should be 0
         statics['filtered_triplets'] = statics['filtered_triplets'].fillna(0)
 
-        # Write the statics file
-        statics.to_hdf(self.statics_output_path_hdf, key='statics')
-        statics.to_csv(self.statics_output_path_csv)
+        # save out statics files to spectral triplets export directory
+        statics.to_hdf(Path(self.spectral_triplet_export_directory, 'spectral_statics.hdf'), key='statics')
+        statics.to_csv(Path(self.spectral_triplet_export_directory, 'spectral_statics.csv'), key='statics')
+
+        # save out statics files to statics directory
+        statics.to_hdf(Path(self.statics_directory, 'spectral_statics.hdf'), key='statics')
+        statics.to_csv(Path(self.statics_directory, 'spectral_statics.csv'), key='statics')
 
 
     def generate_spectral_triplets(self):

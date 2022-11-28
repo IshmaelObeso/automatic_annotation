@@ -1,6 +1,8 @@
 import argparse
 import os
 import sys
+import shutil
+from pathlib import Path
 import pandas as pd
 
 sys.path.append('..')
@@ -25,6 +27,7 @@ def main(
         generate_triplets_and_statics=True,
         generate_annotations=True,
         filter_file_info=None,
+        delete_triplets_and_spectral_triplets=False
          ):
 
     # # save thresholds to models from inputs
@@ -45,31 +48,31 @@ def main(
     batch_annotator = batch_annotation_generator.Batch_Annotator(import_directory, export_directory, vent_annotator_filepath)
 
     # run batch annotator, save the directory it exports the batch annotations to
-    export_directory = batch_annotator.batch_process_and_validate()
+    batch_export_directory = batch_annotator.batch_process_and_validate()
 
     if generate_triplets_and_statics:
 
         # instantiate triplet generator class, and include a filter filepath if given one
-        triplet_generator = triplets_generator.Triplet_Generator(export_directory)
+        triplet_generator = triplets_generator.Triplet_Generator(batch_export_directory)
 
         # run triplet generator
-        export_directory = triplet_generator.generate_triplets()
-        statics_csv_output = triplet_generator.statics_output_path_csv
+        triplet_export_directory = triplet_generator.generate_triplets()
+        triplet_statics_directory = triplet_generator.statics_directory
 
-        print(f'Triplets generated at {os.path.abspath(export_directory)}')
-        print(f"Statics file generated at {os.path.abspath(statics_csv_output)}")
+        print(f'Triplets generated at {os.path.abspath(triplet_export_directory)}')
+        print(f"Statics file generated at {os.path.abspath(triplet_statics_directory)}")
 
 
 
         # instantiate spectral triplet generator class
-        spectral_triplet_generator = spectral_triplets_generator.Spectral_Triplet_Generator(export_directory, filter_file_info=filter_file_info)
+        spectral_triplet_generator = spectral_triplets_generator.Spectral_Triplet_Generator(triplet_export_directory, filter_file_info=filter_file_info)
 
         # run spectral triplet generator
-        spectral_triplets_directory = spectral_triplet_generator.generate_spectral_triplets()
-        statics_csv_output = spectral_triplet_generator.statics_output_path_csv
+        spectral_triplets_export_directory = spectral_triplet_generator.generate_spectral_triplets()
+        spectral_statics_directory = spectral_triplet_generator.statics_directory
 
-        print(f'Spectral Triplets generated at {os.path.abspath(spectral_triplets_directory)}')
-        print(f"Spectral Statics file generated at {os.path.abspath(statics_csv_output)}")
+        print(f'Spectral Triplets generated at {os.path.abspath(spectral_triplets_export_directory)}')
+        print(f"Spectral Statics file generated at {os.path.abspath(spectral_statics_directory)}")
 
         if generate_annotations:
 
@@ -83,13 +86,13 @@ def main(
                 MODELS_DICT[model_name]['model_object'] = model_object
 
             # instantiate predictions wrapper
-            predictions_wrapper = predictions_generator.PredictionAggregator(spectral_triplets_directory=spectral_triplets_directory)
+            predictions_wrapper = predictions_generator.PredictionAggregator(spectral_triplets_directory=spectral_triplets_export_directory)
 
             # generate all predictions and output as predictions dataframe
             predictions_df = predictions_wrapper.generate_all_predictions(models_dict=MODELS_DICT)
 
             # instantiate annotated dataset generator
-            annotation_generator = annotated_dataset_generator.AnnotatedDatasetGenerator(raw_files_directory=import_directory, spectral_triplets_directory=spectral_triplets_directory)
+            annotation_generator = annotated_dataset_generator.AnnotatedDatasetGenerator(raw_files_directory=import_directory, spectral_triplets_directory=spectral_triplets_export_directory)
 
             # create artifact file from binary predictions and info from model settings
             annotation_generator.create_art_files(predictions_df, models_dict=MODELS_DICT)
@@ -97,7 +100,16 @@ def main(
             # add multitarget predictions to artifact files
             print(f'Annotated Dataset Created at {annotation_generator.annotated_dataset_directory}')
 
-            print('---------Done!---------')
+
+    # finally delete triplets and spectral triplets directory if cleanup is selected
+    if generate_triplets_and_statics and delete_triplets_and_spectral_triplets:
+
+        # if triplets directory exists, delete it and its contents
+        if triplet_export_directory.is_dir():
+            shutil.rmtree(triplet_export_directory)
+        # if spectral triplets directory exists, delete it and its contents
+        if spectral_triplets_export_directory.is_dir():
+            shutil.rmtree(spectral_triplets_export_directory)
 
 if __name__ == "__main__":
 
@@ -110,6 +122,7 @@ if __name__ == "__main__":
                    help='Path to vent annotator')
     p.add_argument('--generate_triplets_and_statics', type=bool, default=True)
     p.add_argument('--generate_annotations', type=bool, default=True)
+    p.add_argument('--delete_triplets_and_spectral_triplets', type=bool, default=False)
     p.add_argument('--double_trigger_threshold', type=float, default=.5)
     p.add_argument('--auto_trigger_threshold', type=float, default=.5)
     p.add_argument('--delayed_termination_threshold', type=float, default=.5)
@@ -133,6 +146,7 @@ if __name__ == "__main__":
     exclude_columns_and_values = args['exclude_columns_and_values']
     generate_triplets_and_statics = args['generate_triplets_and_statics']
     generate_annotations = args['generate_annotations']
+    delete_triplets_and_spectral_triplets = args['delete_triplets_and_spectral_triplets']
     # threshold args
     double_trigger_threshold = args['double_trigger_threshold']
     auto_trigger_threshold = args['auto_trigger_threshold']
@@ -164,6 +178,7 @@ if __name__ == "__main__":
         threshold_dict,
         generate_triplets_and_statics,
         generate_annotations,
-        filter_file_info
+        filter_file_info,
+        delete_triplets_and_spectral_triplets
     )
 
