@@ -100,7 +100,6 @@ def main(
             # add multitarget predictions to artifact files
             print(f'Annotated Dataset Created at {annotation_generator.annotated_dataset_directory}')
 
-    import pdb; pdb.set_trace()
     # finally delete triplets and spectral triplets directory if cleanup is selected
     if generate_triplets_and_statics and delete_triplets_and_spectral_triplets:
         print('Deleting Triplets and Spectral Triplets Folders')
