@@ -163,7 +163,7 @@ def pass_user_input():
     # turn thresholds to dict
     threshold_dict = {}
     threshold_dict['Double Trigger'] = {'Double Trigger': double_trigger_threshold_input}
-    threshold_dict['AutoTrigger'] = {'Autotrigger': auto_trigger_threshold_input}
+    threshold_dict['Autotrigger'] = {'Autotrigger': auto_trigger_threshold_input}
     threshold_dict['Delayed Termination'] = {'Delayed Termination': delayed_termination_threshold_input}
     threshold_dict['Flow Undershoot'] = {'Flow Undershoot': flow_undershoot_threshold_input}
     threshold_dict['Premature Termination'] = {'Premature Termination': premature_termination_threshold_input}

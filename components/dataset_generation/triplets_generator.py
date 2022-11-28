@@ -220,7 +220,7 @@ class Triplet_Generator:
         p = Path(self.batch_files_directory)
         subdir_names = [subdir.name for subdir in p.iterdir() if subdir.name not in utils.ERROR_DIRS]
 
-        # Here's where we'll accumulate all of the individual statics files within the loop
+        # Here's where we'll accumulate all the individual statics files within the loop
         patient_day_statics_list = []
 
         # a list to idenfiy which breaths actually had a deltaPes calculated
@@ -266,7 +266,7 @@ class Triplet_Generator:
             one_hot_dyssynchronies = utils.one_hot_dyssynchronies(patient_day)
 
             # Loop through each breath
-            for breath_id in tqdm.tqdm(range(1, patient_day['breath_id'].max()), desc=f'Breaths in Patient {patient_id} Day {day_id} Processed'):
+            for breath_id in tqdm.tqdm(range(1, patient_day['breath_id'].max()), desc=f'Triplets in Patient {patient_id} Day {day_id} Created'):
                 if breath_id not in breath_id_blacklist:
                     # create triplet
                     triplet, triplet_csv_filename = self.build_triplet(patient_day,

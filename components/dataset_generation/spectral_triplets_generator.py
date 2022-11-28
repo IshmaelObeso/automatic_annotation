@@ -209,7 +209,7 @@ class Spectral_Triplet_Generator:
             patient_id = utils.get_patient_id(subdir_name)
             day_id = utils.get_day_id(subdir_name)
 
-            for triplet_csv_file_name in tqdm.tqdm(triplet_csv_file_names, desc=f'Triplets in Patient {patient_id} Day {day_id} Processed'):
+            for triplet_csv_file_name in tqdm.tqdm(triplet_csv_file_names, desc=f'Spectral Triplets in Patient {patient_id} Day {day_id} Created'):
 
                 # initialize spectral triplet
                 triplet, triplet_id, spectral_tensor, tensor_and_truth = self.initialize_spectral_triplet(triplet_subdir, triplet_csv_file_name)
