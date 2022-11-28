@@ -25,7 +25,7 @@ MODELS_DICT = {
                        'dyssynch_code': 107,
                        'channel': 'AirwayPressure',
                        },
-    'AutoTrigger': {'path': auto_trigger_model_path,
+    'Autotrigger': {'path': auto_trigger_model_path,
                      'use': True,
                     'output_columns': ['Autotrigger'],
                     'threshold': {'Autotrigger': .5},
