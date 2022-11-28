@@ -140,7 +140,7 @@ class Data_Cleaner:
 
                 # grab the files from those subdirectories and move them into the invalid folder
                 orig_invalid_subdir_path = Path(directory, invalid_subdir)
-                orig_invalid_file_paths = [f for f in orig_invalid_subdir_path.iterdir() if f.isfile()]
+                orig_invalid_file_paths = [f for f in orig_invalid_subdir_path.iterdir() if f.is_file()]
 
                 # move each file from subdir into invalid folder (There should only be 1 per folder, but loop just in case)
                 for orig_invalid_file_path in orig_invalid_file_paths:
