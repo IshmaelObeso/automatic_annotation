@@ -34,7 +34,7 @@ class Spectral_Triplet_Generator:
         self.triplet_statics = Path(triplet_directory, 'statics.hdf')
 
         # instantiate data cleaner
-        self.data_cleaner = Data_Cleaner(filter_file_info)
+        self.data_cleaner = Data_Cleaner(filter_file_info, parent_directory=self.triplet_directory.parents[0])
 
     def setup_directories(self, triplet_directory):
 
@@ -246,7 +246,7 @@ if __name__ == "__main__":
 
     # run spectral triplet generator
     export_directory = spectral_triplet_generator.generate_spectral_triplets()
-    statics_csv_output = spectral_triplet_generator.statics_output_path_csv
+    statics_directory = spectral_triplet_generator.statics_directory
 
     print(f'Spectral Triplets generated at {export_directory}')
-    print(f"Spectral Statics file generated at {statics_csv_output}")
+    print(f"Spectral Statics file generated at {statics_directory}")

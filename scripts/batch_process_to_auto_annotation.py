@@ -168,7 +168,7 @@ if __name__ == "__main__":
     # define threshold dict
     threshold_dict = {}
     threshold_dict['Double Trigger'] = {'Double Trigger': double_trigger_threshold}
-    threshold_dict['AutoTrigger'] = {'Autotrigger': auto_trigger_threshold}
+    threshold_dict['Autotrigger'] = {'Autotrigger': auto_trigger_threshold}
     threshold_dict['Delayed Termination'] = {'Delayed Termination': delayed_termination_threshold}
     threshold_dict['Flow Undershoot'] = {'Flow Undershoot': flow_undershoot_threshold}
     threshold_dict['Premature Termination'] = {'Premature Termination': premature_termination_threshold}

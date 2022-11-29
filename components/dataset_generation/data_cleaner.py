@@ -12,7 +12,7 @@ class Data_Cleaner:
      like the triplets class.
     """
 
-    def __init__(self, filter_file_info=None):
+    def __init__(self, filter_file_info=None, parent_directory=None):
 
         # save info about filtered tripelts if given
         self.filter_file_info = filter_file_info
@@ -20,7 +20,7 @@ class Data_Cleaner:
         # if we want to use the filter file info, generate the pt days to exclude
         try:
             if self.filter_file_info['use'] == True:
-                self.exclude_pt_days = self.get_exclude_pt_days()
+                self.exclude_pt_days = self.get_exclude_pt_days(parent_directory)
         # except if filter file info is None
         except TypeError:
             pass
@@ -158,7 +158,7 @@ class Data_Cleaner:
             print('No patient days without TriggerAndArtifacts File Found!')
             return num_invalid, None
 
-    def get_exclude_pt_days(self):
+    def get_exclude_pt_days(self, parent_directory):
         """
         This function takes the filter file info and saves a list of patient days to exclude from analysis
 
@@ -210,6 +210,9 @@ class Data_Cleaner:
 
         # get the unique patient days in this dataframe
         exclude_pt_days = filtering_file_exclude['patient_day'].unique().tolist()
+
+        # save filter file we used to our directory
+        filtering_file.to_csv(Path(parent_directory, 'filter_file.csv'))
 
         return exclude_pt_days
 
