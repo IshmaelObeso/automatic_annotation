@@ -134,7 +134,7 @@ if __name__ == "__main__":
     p.add_argument('--premature_termination_threshold', type=float, default=.5)
     p.add_argument('--reverse_trigger_threshold', type=float, default=.5)
     p.add_argument('--use_filter_file', type=bool, default=False)
-    p.add_argument('--filter_filepath', type=str, default="C:\\Users\\iobeso\\Documents\\Asynchrony_Project_file__master.xlsx")
+    p.add_argument('--filter_filepath', type=str, default="C:\\Users\\iobeso\\Documents\\Asynchrony_Project_file__master_11.25.22.xlsx")
     p.add_argument('--exclude_columns_and_values',
                    type=dict[str, str],
                    default={'Reviewed by:': 'NaN', 'analysis exclusion': 'not NaN'})

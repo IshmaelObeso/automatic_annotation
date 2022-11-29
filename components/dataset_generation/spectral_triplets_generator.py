@@ -119,9 +119,9 @@ class Spectral_Triplet_Generator:
             has_spectral_triplet.append([subdir_name, triplet_id])
 
         ## flag triplet if we want to filter it out later
-        dont_filter = self.data_cleaner.check_for_validity(subdir_name)
+        filter_triplet = self.data_cleaner.check_for_validity(subdir_name)
 
-        if dont_filter:
+        if filter_triplet:
             filtered_triplets.append([subdir_name, triplet_id])
 
         ## TODO: Remove this, you can just do triplet['triplet_id'] != triplet['breath_id']

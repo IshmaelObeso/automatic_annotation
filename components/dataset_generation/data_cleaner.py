@@ -20,7 +20,7 @@ class Data_Cleaner:
         # if we want to use the filter file info, generate the pt days to exclude
         try:
             if self.filter_file_info['use'] == True:
-                self.exclude_pt_days = self.get_exclude_pt_days(parent_directory)
+                self.include_pt_days = self.get_include_pt_days(parent_directory)
         # except if filter file info is None
         except TypeError:
             pass
@@ -158,9 +158,9 @@ class Data_Cleaner:
             print('No patient days without TriggerAndArtifacts File Found!')
             return num_invalid, None
 
-    def get_exclude_pt_days(self, parent_directory):
+    def get_include_pt_days(self, parent_directory):
         """
-        This function takes the filter file info and saves a list of patient days to exclude from analysis
+        This function takes the filter file info and saves a list of patient days to include in our dataset
 
         """
 
@@ -208,22 +208,28 @@ class Data_Cleaner:
         # concat all rows we should exclude
         filtering_file_exclude = pd.concat(filtering_file_exclude).drop_duplicates()
 
-        # get the unique patient days in this dataframe
-        exclude_pt_days = filtering_file_exclude['patient_day'].unique().tolist()
+        # get the unique patient days to exclude
+        exclude_pt_days = pd.Index(filtering_file_exclude['patient_day'].unique())
+
+        # get all patient days in the file
+        all_pt_days = pd.Index(filtering_file['patient_day'].unique())
+
+        # now filter out the patient days we want to exclude, and save all the patient days to include
+        include_pt_days = all_pt_days.difference(exclude_pt_days).tolist()
 
         # save filter file we used to our directory
         filtering_file.to_csv(Path(parent_directory, 'filter_file.csv'))
 
-        return exclude_pt_days
+        return include_pt_days
 
 
     def check_for_validity(self, subdir_name):
         """
-        Function that takes an artifacts file and uses it to filter out patient_days that should not be included in dataset
+        Function that checks a breath to see if we should include it in our dataset
 
         :param subdir_name: name of the triplet subdirectory
 
-        :return: bool , True if triplet should not be filtered, False if it should be filtered
+        :return: bool , True if triplet should be filtered, False if it should not be filtered
 
         """
 
@@ -234,14 +240,14 @@ class Data_Cleaner:
         # save triplet information to check against csv
         patient_day = (int(patient_id), int(day_id))
 
-        # check if filter file info exists, it always should. if not return true for every triplet
+        # check if filter file info exists, it always should. if not return false for every triplet
         if self.filter_file_info is not None:
 
             # check if we should filter out breaths
             if self.filter_file_info['use']:
 
-                # now check if any patient_days in this subset equal the patient day we are checking
-                if patient_day in self.exclude_pt_days:
+                # now check if the pt day we are checking should be included in the dataset
+                if patient_day in self.include_pt_days:
 
                     return True
 
@@ -249,12 +255,12 @@ class Data_Cleaner:
 
                     return False
 
-            # if we shouldn't use filter, return true for every breath
+            # if we shouldn't use filter, return false for every breath
             else:
-                return True
+                return False
 
         else:
-            return True
+            return False
 
 
 
