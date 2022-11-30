@@ -5,12 +5,15 @@ import shutil
 from pathlib import Path
 import pandas as pd
 
+
 sys.path.append('..')
 
 from components.dataset_generation import batch_annotation_generator, spectral_triplets_generator, triplets_generator
 from components.annotation_generation import annotated_dataset_generator, annotation_model, predictions_generator
 from components.annotation_generation.utilities.model_settings import MODELS_DICT
 
+import warnings
+warnings.filterwarnings('ignore')
 
 # This script creates annotations from raw REDVENT files
 # This script will run the batch annotator on raw patient-day files, organize them into output directories,

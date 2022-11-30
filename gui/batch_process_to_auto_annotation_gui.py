@@ -2,12 +2,18 @@ import tkinter as tk
 from tkinter import ttk, filedialog
 from tkinter import *
 import sys
+import multiprocessing as mp
 
 sys.path.append('..')
 
 from scripts import batch_process_to_auto_annotation
 
+import warnings
+warnings.filterwarnings('ignore')
+
+
 # TODO: Make this tkinter gui OOP. It works without it, its just ugly :(
+
 
 
 
@@ -207,7 +213,7 @@ def main():
             thresholds_dict=threshold_dict,
             filter_file_info=filter_info,
             delete_triplets_and_spectral_triplets=delete_triplets_input,
-            multithreading=multiprocessing_input
+            multiprocessing=multiprocessing_input
         )
 
     # create button that will use arguments from entries and run function
@@ -218,5 +224,7 @@ def main():
 # if running this file directly, only do do triplet generation
 if __name__ == "__main__":
 
+    # call this to prevent multi guis from spawning in .exe
+    mp.freeze_support()
     # run main function
     main()
