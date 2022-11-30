@@ -164,6 +164,9 @@ class Data_Cleaner:
 
         """
 
+        # make sure filter filepath exists
+        assert self.filter_file_info['filepath'] is not None; 'Filter file filepath must exist if use_filter_file = True'
+
         # get the filepath to csv filter file
         csv_filepath = self.filter_file_info['filepath']
         # turn info Path object if not already
