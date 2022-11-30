@@ -85,7 +85,7 @@ class Spectral_Triplet_Generator:
 
         return triplet, triplet_id, spectral_tensor, tensor_and_truth
 
-    def create_spectral_triplet(self, triplet, spectral_tensor, has_spectral_triplet, filtered_triplets, subdir_name, triplet_id):
+    def create_spectral_triplet(self, triplet, spectral_tensor, has_spectral_triplet, keep_triplets, subdir_name, triplet_id):
 
         for mode in utils.MODES:
             for waveform_column in utils.WAVEFORM_COLUMNS:
@@ -118,11 +118,11 @@ class Spectral_Triplet_Generator:
         if np.isinf(spectral_tensor).sum() == 0:
             has_spectral_triplet.append([subdir_name, triplet_id])
 
-        ## flag triplet if we want to filter it out later
-        filter_triplet = self.data_cleaner.check_for_validity(subdir_name)
+        ## flag triplet if we want to keep it in our dataset
+        keep_triplet = self.data_cleaner.check_for_validity(subdir_name)
 
-        if filter_triplet:
-            filtered_triplets.append([subdir_name, triplet_id])
+        if keep_triplet:
+            keep_triplets.append([subdir_name, triplet_id])
 
         ## TODO: Remove this, you can just do triplet['triplet_id'] != triplet['breath_id']
         # Grab the first and last breath IDs to nan out
@@ -136,7 +136,7 @@ class Spectral_Triplet_Generator:
                     list(set(utils.COOCCURRENCES_TO_CREATE_VIA_AND.keys())) +
                     ['No Double Trigger', 'No Inadequate Support']] = np.nan
 
-        return triplet, spectral_tensor, has_spectral_triplet, filtered_triplets
+        return triplet, spectral_tensor, has_spectral_triplet, keep_triplets
 
     def save_spectral_triplet(self, tensor_and_truth, triplet, spectral_tensor, spectral_triplet_subdir, triplet_csv_file_name):
 
@@ -149,7 +149,7 @@ class Spectral_Triplet_Generator:
         with open(spectral_triplet_pickle_file_name, 'wb') as file:
             pickle.dump(tensor_and_truth, file)
 
-    def finalize_statics(self, has_spectral_triplet, filtered_triplets):
+    def finalize_statics(self, has_spectral_triplet, keep_triplets):
 
         # read in statics file
         statics = pd.read_hdf(self.triplet_statics)
@@ -161,8 +161,8 @@ class Spectral_Triplet_Generator:
         has_spectral_triplet['has_spectral_triplet'] = 1
 
         # do the same with filtered_triplets
-        filtered_triplets = pd.DataFrame(filtered_triplets, columns=utils.MERGE_COLUMNS)
-        filtered_triplets['filtered_triplets'] = 1
+        keep_triplets = pd.DataFrame(keep_triplets, columns=utils.MERGE_COLUMNS)
+        keep_triplets['keep_triplet'] = 1
 
         # Save this to restore the index after the merge
         statics_index = statics.index.names
@@ -172,15 +172,15 @@ class Spectral_Triplet_Generator:
                                               how='left',
                                               on=utils.MERGE_COLUMNS).set_index(statics_index)
         # do the same with filtered triplets
-        statics = statics.reset_index().merge(filtered_triplets,
+        statics = statics.reset_index().merge(keep_triplets,
                                               how='left',
                                               on=utils.MERGE_COLUMNS).set_index(statics_index)
 
         # The breaths that have spectral triplets have been flagged and the rest should be 0
         statics['has_spectral_triplet'] = statics['has_spectral_triplet'].fillna(0)
 
-        # the breaths that have been filtered out by Ben's csv file have been flagged and the rest should be 0
-        statics['filtered_triplets'] = statics['filtered_triplets'].fillna(0)
+        # the breaths that we should keep have been flagged, and the rest should be 0
+        statics['keep_triplet'] = statics['keep_triplet'].fillna(0)
 
         # save out statics files to spectral triplets export directory
         statics.to_hdf(Path(self.spectral_triplet_export_directory, 'spectral_statics.hdf'), key='statics')
@@ -201,7 +201,7 @@ class Spectral_Triplet_Generator:
         has_spectral_triplet = []
 
         # a list to identify which breaths in statics should be filtered out based on Ben's csv file
-        filtered_triplets = []
+        keep_triplets = []
 
         print(f'Creating spectrogram tensors from {len(subdir_names)} subdirectories of breath triplets...')
 
@@ -220,13 +220,13 @@ class Spectral_Triplet_Generator:
                 triplet, triplet_id, spectral_tensor, tensor_and_truth = self.initialize_spectral_triplet(triplet_subdir, triplet_csv_file_name)
 
                 # create spectral triplet and save to pkl file
-                triplet, spectral_tensor, has_spectral_triplet, filtered_triplets = self.create_spectral_triplet(triplet, spectral_tensor, has_spectral_triplet, filtered_triplets, subdir_name, triplet_id)
+                triplet, spectral_tensor, has_spectral_triplet, keep_triplets = self.create_spectral_triplet(triplet, spectral_tensor, has_spectral_triplet, keep_triplets, subdir_name, triplet_id)
 
                 # save spectral triplet to pickle file
                 self.save_spectral_triplet(tensor_and_truth, triplet, spectral_tensor, spectral_triplet_subdir, triplet_csv_file_name)
 
         # after looping through every triplets file, finalize the statics file and save it out
-        self.finalize_statics(has_spectral_triplet, filtered_triplets)
+        self.finalize_statics(has_spectral_triplet, keep_triplets)
 
         return self.spectral_triplet_export_directory
 
