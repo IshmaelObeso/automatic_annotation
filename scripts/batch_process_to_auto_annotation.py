@@ -27,7 +27,8 @@ def main(
         generate_triplets_and_statics=True,
         generate_annotations=True,
         filter_file_info=None,
-        delete_triplets_and_spectral_triplets=False
+        delete_triplets_and_spectral_triplets=False,
+        multiprocessing=False
          ):
 
     # # save thresholds to models from inputs
@@ -56,19 +57,17 @@ def main(
         triplet_generator = triplets_generator.Triplet_Generator(batch_export_directory)
 
         # run triplet generator
-        triplet_export_directory = triplet_generator.generate_triplets()
+        triplet_export_directory = triplet_generator.generate_triplets(multiprocessing)
         triplet_statics_directory = triplet_generator.statics_directory
 
         print(f'Triplets generated at {os.path.abspath(triplet_export_directory)}')
         print(f"Statics file generated at {os.path.abspath(triplet_statics_directory)}")
 
-
-
         # instantiate spectral triplet generator class
         spectral_triplet_generator = spectral_triplets_generator.Spectral_Triplet_Generator(triplet_export_directory, filter_file_info=filter_file_info)
 
         # run spectral triplet generator
-        spectral_triplets_export_directory = spectral_triplet_generator.generate_spectral_triplets()
+        spectral_triplets_export_directory = spectral_triplet_generator.generate_spectral_triplets(multiprocessing)
         spectral_statics_directory = spectral_triplet_generator.statics_directory
 
         print(f'Spectral Triplets generated at {os.path.abspath(spectral_triplets_export_directory)}')
@@ -138,6 +137,7 @@ if __name__ == "__main__":
     p.add_argument('--exclude_columns_and_values',
                    type=dict[str, str],
                    default={'Reviewed by:': 'NaN', 'analysis exclusion': 'not NaN'})
+    p.add_argument('--multiprocessing', type=bool, default=False)
 
     args = vars(p.parse_args())
 
@@ -151,6 +151,7 @@ if __name__ == "__main__":
     generate_triplets_and_statics = args['generate_triplets_and_statics']
     generate_annotations = args['generate_annotations']
     delete_triplets_and_spectral_triplets = args['delete_triplets_and_spectral_triplets']
+    multiprocessing=args['multiprocessing']
     # threshold args
     double_trigger_threshold = args['double_trigger_threshold']
     auto_trigger_threshold = args['auto_trigger_threshold']
@@ -183,6 +184,7 @@ if __name__ == "__main__":
         generate_triplets_and_statics,
         generate_annotations,
         filter_file_info,
-        delete_triplets_and_spectral_triplets
+        delete_triplets_and_spectral_triplets,
+        multiprocessing
     )
 

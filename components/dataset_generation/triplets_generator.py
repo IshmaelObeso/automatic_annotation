@@ -4,8 +4,7 @@ import numpy as np
 import argparse
 from pathlib import Path
 from components.dataset_generation.utilities import utils, deltaPes_utils
-
-
+from pqdm.processes import pqdm
 
 class Triplet_Generator:
     ''' This Class carries out all functions of the triplet generator.
@@ -219,11 +218,7 @@ class Triplet_Generator:
         all_patient_day_statics.to_hdf(Path(self.statics_directory, 'statics.hdf'), key='statics')
         all_patient_day_statics.to_csv(Path(self.statics_directory, 'statics.csv'))
 
-    def generate_triplets(self):
-
-        # Grab the triplet folders from their directories
-        p = Path(self.batch_files_directory)
-        subdir_names = [subdir.name for subdir in p.iterdir() if subdir.name not in utils.ERROR_DIRS]
+    def loop_through_triplets(self, subdir_name):
 
         # Here's where we'll accumulate all the individual statics files within the loop
         patient_day_statics_list = []
@@ -234,58 +229,82 @@ class Triplet_Generator:
         # a temporary list of detlaPes calculations per breath
         deltaPes_list = []
 
+        # get the patient day and set up patient_day directories
+        patient_id, day_id, patient_day_dir, patient_day_output_dir, patient_day = self.get_patient_day(subdir_name)
+
+        # create dyssynchrony mask
+        patient_day = self.create_dyssynchrony_mask(patient_day)
+
+        # create breath ids
+        patient_day = self.create_breath_ids(patient_day)
+
+        # Convert the time column to datetime format (be explicit with the format or it's slooowwwww)
+        patient_day['TimeRel'] = pd.to_datetime(patient_day['TimeRel'], format='%H:%M:%S.%f')
+
+        # setup statics file
+        patient_day_statics, patient_day_statics_list = self.build_statics_file(
+            patient_day,
+            patient_id,
+            day_id,
+            patient_day_statics_list,
+            subdir_name
+        )
+
+        # then get blacklist of breaths that are too long/short so we don't do anything with them
+        breath_length_blacklist = utils.get_breath_length_blacklist(patient_day)
+
+        breath_id_blacklist = np.unique(breath_length_blacklist)
+
+        # Get dyssynchrony columns, so that the one hot columns span the entire triplet,
+        # we will merge within the next loop
+        one_hot_dyssynchronies = utils.one_hot_dyssynchronies(patient_day)
+
+        # Loop through each breath
+        for breath_id in range(1, patient_day['breath_id'].max()):
+
+            if breath_id not in breath_id_blacklist:
+                # create triplet
+                triplet, triplet_csv_filename = self.build_triplet(patient_day,
+                                                                   patient_day_output_dir,
+                                                                   breath_id,
+                                                                   one_hot_dyssynchronies)
+
+                # calculate deltaPes
+                triplet, deltaPes_list, has_deltaPes = self.calculate_deltaPes(triplet,
+                                                                               breath_id,
+                                                                               subdir_name,
+                                                                               deltaPes_list,
+                                                                               has_deltaPes,
+                                                                               triplet_csv_filename)
+
+        # return first element in these lists, with multithreading there will only be one item per list
+        return patient_day_statics_list[0], deltaPes_list[0], has_deltaPes[0]
+
+    def generate_triplets(self, multiprocessing=False):
+
+        # Grab the triplet folders from their directories
+        p = Path(self.batch_files_directory)
+        subdir_names = [subdir.name for subdir in p.iterdir() if subdir.name not in utils.ERROR_DIRS]
+
         print(f'Creating CSVs from {len(subdir_names)} subdirectories of patient-days...')
 
-        # Loop through each subdirectory
-        for subdir_name in tqdm.tqdm(subdir_names, desc='Patient-Days Processed'):
+        # find the number of workers to use
+        n_workers = utils.num_workers(multiprocessing)
+        # multiprocessing requires a list to loop over, a function object, and number of workers
+        # for each subdir name in subdir names, get the results from each function call and append them to a list called results
+        results = pqdm(subdir_names, self.loop_through_triplets, n_jobs=n_workers, desc='Patient-Days of Triplets Generated')
 
-            # get the patient day and set up patient_day directories
-            patient_id, day_id, patient_day_dir, patient_day_output_dir, patient_day = self.get_patient_day(subdir_name)
+        # initialize empty lists to build
+        patient_day_statics_list = []
+        deltaPes_list = []
+        has_deltaPes = []
 
-            # create dyssynchrony mask
-            patient_day = self.create_dyssynchrony_mask(patient_day)
-
-            # create breath ids
-            patient_day = self.create_breath_ids(patient_day)
-
-            # Convert the time column to datetime format (be explicit with the format or it's slooowwwww)
-            patient_day['TimeRel'] = pd.to_datetime(patient_day['TimeRel'], format='%H:%M:%S.%f')
-
-            # setup statics file
-            patient_day_statics, patient_day_statics_list = self.build_statics_file(
-                patient_day,
-                patient_id,
-                day_id,
-                patient_day_statics_list,
-                subdir_name
-            )
-
-
-            # then get blacklist of breaths that are too long/short so we don't do anything with them
-            breath_length_blacklist = utils.get_breath_length_blacklist(patient_day)
-
-            breath_id_blacklist = np.unique(breath_length_blacklist)
-
-            # Get dyssynchrony columns, so that the one hot columns span the entire triplet,
-            # we will merge within the next loop
-            one_hot_dyssynchronies = utils.one_hot_dyssynchronies(patient_day)
-
-            # Loop through each breath
-            for breath_id in tqdm.tqdm(range(1, patient_day['breath_id'].max()), desc=f'Triplets in Patient {patient_id} Day {day_id} Created'):
-                if breath_id not in breath_id_blacklist:
-                    # create triplet
-                    triplet, triplet_csv_filename = self.build_triplet(patient_day,
-                                       patient_day_output_dir,
-                                       breath_id,
-                                       one_hot_dyssynchronies)
-
-                    # calculate deltaPes
-                    triplet, deltaPes_list, has_deltaPes = self.calculate_deltaPes(triplet,
-                                                      breath_id,
-                                                      subdir_name,
-                                                      deltaPes_list,
-                                                      has_deltaPes,
-                                                      triplet_csv_filename)
+        # put together all results
+        for result in results:
+            # each result has structure [patient_day_statics_list, delta_pes_list, has_deltaPes]
+            patient_day_statics_list.append(result[0])
+            deltaPes_list.append(result[1])
+            has_deltaPes.append(result[2])
 
         # after looping through all triplet, create final statics file
         self.create_final_statics(patient_day_statics_list, deltaPes_list, has_deltaPes)
@@ -308,7 +327,7 @@ if __name__ == "__main__":
 
     # run triplet generator
     export_directory = triplet_generator.generate_triplets()
-    statics_csv_output = triplet_generator.statics_output_path_csv
+    statics_csv_output = triplet_generator.statics_directory
 
     print(f'Triplets generated at {export_directory}')
     print(f"Statics file generated at {statics_csv_output}")

@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 import re
+import multiprocessing as mp
 
 dyssynchrony = {104: 'Autotrigger',
                 106: 'Ineffective Trigger',
@@ -483,3 +484,13 @@ def create_cooccurrence_column_via_and(statics, cooccurrence_col, combine_col_li
                                  (statics[combine_col_list[1]].fillna(0).astype(bool))).astype(int)
 
     return statics
+
+def num_workers(multiprocessing=False):
+
+    if not multiprocessing:
+        return 1
+    elif mp.cpu_count() == 1:
+        return 1
+    else:
+        return mp.cpu_count()-1
+

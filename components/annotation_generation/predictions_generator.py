@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 from pathlib import Path
 from components.annotation_generation import prediction_data_pipe
-
+from components.annotation_generation.utilities import utils
+from pqdm.processes import pqdm
 class PredictionAggregator:
 
     '''
@@ -105,57 +106,61 @@ class PredictionGenerator:
 
         return predictions_df
 
+
+    def generate_predictions(self, uid):
+
+        # get spectrograms for every uid
+        xs, ys, ts, uid = self.data_class.__getitem__(uid)
+
+        # reshape
+        xs = np.reshape(xs, self.input_shape)
+
+        # get prediction
+        pred = self.model.session.run([self.output_name], {self.input_name: xs.astype(np.float32)})
+        # get prediction as a singular array
+        pred = pred[0][0]
+
+        # get the max of truth ie. was there a dyssynchrony in this triplet or not
+        ys = np.nan_to_num(ys).max(axis=0)
+
+        # save truth and preds as dataframes
+        uid_y0s_df = pd.DataFrame([pred], columns=[f'{col}_preds' for col in self.output_cols])
+        uid_ys_df = pd.DataFrame([ys], columns=[f'{col}_truth' for col in self.output_cols])
+
+        # concat truth and preds
+        uid_df = pd.concat([uid_ys_df, uid_y0s_df], axis=1)
+
+        # add index columns
+        uid_df['patient_id'] = uid[0]
+        uid_df['day_id'] = uid[1]
+        uid_df['breath_id'] = uid[2]
+
+        return uid_df
+
     def get_predictions(self, model_name, parameters):
         """ get predictions for every spectral triplet in dataset, predictions will be output as hdf file"""
 
         # get model parameters
         threshold_dict = parameters['threshold']
-        model = parameters['model_object']
+        self.model = parameters['model_object']
 
         # get model attributes
-        input_name, input_shape, output_name = model.get_model_attributes()
+        self.input_name, self.input_shape, self.output_name = self.model.get_model_attributes()
         # set batch_size to 1
-        input_shape[0] = 1
+        self.input_shape[0] = 1
 
         # get all uids in dataset
         all_uids = self.data_class.get_uids()
 
-        preds_df_list = []
+        # multiprocessing requires a list to loop over, a function object, and number of workers
+        # MULTIPROCESSING ONNX MAKES IT SLOWER, SET N_JOBS TO 1 :(
+        # will keep the pqdm call though because it looks nicer than a loop with tqdm
+        # results will be a list of uid_dfs that we will concantenate together
 
-        # for every spectrogram in dataset
-        for uid in tqdm.tqdm(all_uids, desc=f'Generating {model_name} Predictions'):
-
-            # get spectrograms for every uid
-            xs, ys, ts, uid = self.data_class.__getitem__(uid)
-
-            # reshape
-            xs = np.reshape(xs, input_shape)
-
-            # get prediction
-            pred = model.session.run([output_name], {input_name: xs.astype(np.float32)})
-            # get prediction as a singular array
-            pred = pred[0][0]
-
-            # get the max of truth ie. was there a dyssynchrony in this triplet or not
-            ys = np.nan_to_num(ys).max(axis=0)
-
-            # save truth and preds as dataframes
-            uid_y0s_df = pd.DataFrame([pred], columns=[f'{col}_preds' for col in self.output_cols])
-            uid_ys_df = pd.DataFrame([ys], columns=[f'{col}_truth' for col in self.output_cols])
-
-            # concat truth and preds
-            uid_df = pd.concat([uid_ys_df, uid_y0s_df], axis=1)
-
-            # add index columns
-            uid_df['patient_id'] = uid[0]
-            uid_df['day_id'] = uid[1]
-            uid_df['breath_id'] = uid[2]
-
-            # add to dfs list
-            preds_df_list.append(uid_df)
+        results = pqdm(all_uids, self.generate_predictions, n_jobs=1, desc=f'Generating {model_name} Predictions')
 
         # concat dfs
-        preds_df = pd.concat(preds_df_list)
+        preds_df = pd.concat(results)
 
         # set index
         preds_df = preds_df.set_index(['patient_id', 'day_id', 'breath_id'])

@@ -3,14 +3,18 @@ import numpy as np
 from scipy import signal
 
 import pickle
-import tqdm
+import warnings
 import argparse
 from pathlib import Path
 from components.dataset_generation.utilities import utils
 from components.dataset_generation.data_cleaner import Data_Cleaner
+from pqdm.processes import pqdm
 
 # silence pandas warning
 pd.options.mode.chained_assignment = None
+
+# silence scipy divideby zero warning when waveform has discontinuity
+warnings.filterwarnings("ignore", message=".*divide")
 
 class Spectral_Triplet_Generator:
     ''' This Class carries out all functions of the triplet generator.
@@ -160,10 +164,6 @@ class Spectral_Triplet_Generator:
         has_spectral_triplet = pd.DataFrame(has_spectral_triplet, columns=utils.MERGE_COLUMNS)
         has_spectral_triplet['has_spectral_triplet'] = 1
 
-        # do the same with filtered_triplets
-        keep_triplets = pd.DataFrame(keep_triplets, columns=utils.MERGE_COLUMNS)
-        keep_triplets['keep_triplet'] = 1
-
         # Save this to restore the index after the merge
         statics_index = statics.index.names
 
@@ -171,16 +171,29 @@ class Spectral_Triplet_Generator:
         statics = statics.reset_index().merge(has_spectral_triplet,
                                               how='left',
                                               on=utils.MERGE_COLUMNS).set_index(statics_index)
-        # do the same with filtered triplets
-        statics = statics.reset_index().merge(keep_triplets,
-                                              how='left',
-                                              on=utils.MERGE_COLUMNS).set_index(statics_index)
 
         # The breaths that have spectral triplets have been flagged and the rest should be 0
         statics['has_spectral_triplet'] = statics['has_spectral_triplet'].fillna(0)
 
+        # if keep_triplets has entries
+        try:
+            # do the same with keep_triplet
+            keep_triplets = pd.DataFrame(keep_triplets, columns=utils.MERGE_COLUMNS)
+            keep_triplets['keep_triplet'] = 1
+
+            # Merge the keep_triplets column into statics
+            statics = statics.reset_index().merge(keep_triplets,
+                                                  how='left',
+                                                  on=utils.MERGE_COLUMNS).set_index(statics_index)
+        # if keep triplets has no entries
+        except:
+
+            # make keep_triplet column filled with 0
+            statics['keep_triplet'] = 0
+
         # the breaths that we should keep have been flagged, and the rest should be 0
         statics['keep_triplet'] = statics['keep_triplet'].fillna(0)
+
 
         # save out statics files to spectral triplets export directory
         statics.to_hdf(Path(self.spectral_triplet_export_directory, 'spectral_statics.hdf'), key='statics')
@@ -190,12 +203,7 @@ class Spectral_Triplet_Generator:
         statics.to_hdf(Path(self.statics_directory, 'spectral_statics.hdf'), key='statics')
         statics.to_csv(Path(self.statics_directory, 'spectral_statics.csv'))
 
-
-    def generate_spectral_triplets(self):
-
-        # Grab the triplet folders from their directories
-        p = Path(self.triplet_directory)
-        subdir_names = [subdir.name for subdir in p.iterdir() if subdir.is_dir()]
+    def loop_through_spectral_triplets(self, subdir_name):
 
         # A list to identify which breaths in statics actually have spectral triplets
         has_spectral_triplet = []
@@ -203,27 +211,64 @@ class Spectral_Triplet_Generator:
         # a list to identify which breaths in statics should be filtered out based on Ben's csv file
         keep_triplets = []
 
+        # setup spectral triplet directories and get list of files
+        triplet_subdir, spectral_triplet_subdir, triplet_csv_file_names = self.setup_spectral_subdirectories(
+            subdir_name)
+
+        # get the patient and day id
+        patient_id = utils.get_patient_id(subdir_name)
+        day_id = utils.get_day_id(subdir_name)
+
+        for triplet_csv_file_name in triplet_csv_file_names:
+
+            # initialize spectral triplet
+            triplet, triplet_id, spectral_tensor, tensor_and_truth = self.initialize_spectral_triplet(triplet_subdir,
+                                                                                                      triplet_csv_file_name)
+
+            # create spectral triplet and save to pkl file
+            triplet, spectral_tensor, has_spectral_triplet, keep_triplets = self.create_spectral_triplet(triplet,
+                                                                                                         spectral_tensor,
+                                                                                                         has_spectral_triplet,
+                                                                                                         keep_triplets,
+                                                                                                         subdir_name,
+                                                                                                         triplet_id)
+
+            # save spectral triplet to pickle file
+            self.save_spectral_triplet(tensor_and_truth, triplet, spectral_tensor, spectral_triplet_subdir,
+                                       triplet_csv_file_name)
+
+        # if there are elements in keep_triplets, (if there are there should only be one), then return that element, otherwise return the empty list
+        if len(keep_triplets) > 0:
+            keep_triplets = keep_triplets[0]
+        # do the same for has_spectral_triplet
+        if len(has_spectral_triplet) > 0:
+            has_spectral_triplet = has_spectral_triplet[0]
+
+        return has_spectral_triplet, keep_triplets
+
+    def generate_spectral_triplets(self, multiprocessing=False):
+
+        # Grab the triplet folders from their directories
+        p = Path(self.triplet_directory)
+        subdir_names = [subdir.name for subdir in p.iterdir() if subdir.is_dir()]
+
         print(f'Creating spectrogram tensors from {len(subdir_names)} subdirectories of breath triplets...')
 
-        for subdir_name in tqdm.tqdm(subdir_names, desc='Patient-Days Processed'):
+        # find the number of workers to use
+        n_workers = utils.num_workers(multiprocessing)
+        # multiprocessing requires a list to loop over, a function object, and number of workers
+        # for each subdir name in subdir names, get the results from each function call and append them to a list called results
+        results = pqdm(subdir_names, self.loop_through_spectral_triplets, n_jobs=n_workers, desc='Patient-Days of Spectral Triplets Generated')
 
-            # setup spectral triplet directories and get list of files
-            triplet_subdir, spectral_triplet_subdir, triplet_csv_file_names = self.setup_spectral_subdirectories(subdir_name)
+        # initialize empty lists to build
+        has_spectral_triplet = []
+        keep_triplets = []
 
-            # get the patient and day id
-            patient_id = utils.get_patient_id(subdir_name)
-            day_id = utils.get_day_id(subdir_name)
-
-            for triplet_csv_file_name in tqdm.tqdm(triplet_csv_file_names, desc=f'Spectral Triplets in Patient {patient_id} Day {day_id} Created'):
-
-                # initialize spectral triplet
-                triplet, triplet_id, spectral_tensor, tensor_and_truth = self.initialize_spectral_triplet(triplet_subdir, triplet_csv_file_name)
-
-                # create spectral triplet and save to pkl file
-                triplet, spectral_tensor, has_spectral_triplet, keep_triplets = self.create_spectral_triplet(triplet, spectral_tensor, has_spectral_triplet, keep_triplets, subdir_name, triplet_id)
-
-                # save spectral triplet to pickle file
-                self.save_spectral_triplet(tensor_and_truth, triplet, spectral_tensor, spectral_triplet_subdir, triplet_csv_file_name)
+        # put together all results
+        for result in results:
+            # each result has structure [patient_day_statics_list, delta_pes_list, has_deltaPes]
+            has_spectral_triplet.append(result[0])
+            keep_triplets.append(result[1])
 
         # after looping through every triplets file, finalize the statics file and save it out
         self.finalize_statics(has_spectral_triplet, keep_triplets)
