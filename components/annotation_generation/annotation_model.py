@@ -39,7 +39,15 @@ class Annotation_Model:
 
         return input_name, input_shape, output_name
 
-    def init_session(model_path):
+    def init_session(self, model_path: object) -> object:
+        """
+
+        Args:
+            model_path:
+
+        Returns:
+
+        """
         providers_list = ['CPUExecutionProvider']
         sess = rt.InferenceSession(model_path, providers=providers_list)
         return sess

@@ -183,7 +183,7 @@ class Triplet_Generator:
 
         return triplet, triplet_csv_filename
 
-    def calculate_deltaPes(self, triplet: object, breath_id: object, subdir: object, deltaPes_list: object, has_deltaPes: object, triplet_csv_filename: object) -> object:
+    def calculate_deltaPes(self, triplet: object, breath_id: object, subdir: object, deltaPes_list: object, triplet_csv_filename: object) -> object:
         """
 
         Args:
@@ -191,7 +191,6 @@ class Triplet_Generator:
             breath_id:
             subdir:
             deltaPes_list:
-            has_deltaPes:
             triplet_csv_filename:
 
         Returns:
@@ -199,13 +198,12 @@ class Triplet_Generator:
         """
         try:
             deltaPes = deltaPes_utils.calculate_deltaPes(triplet_csv_filename)
-            deltaPes_list.append([deltaPes, subdir, breath_id])
-            has_deltaPes.append([subdir, breath_id])
         # if there is a problem calculating deltaPES, save deltaPES as NaN
         except:
-            print(f'Error Calculating DeltaPES for pt {utils.get_patient_id(subdir)}, day {utils.get_day_id(subdir)},breath {breath_id} saving deltaPES as NaN')
+            print(f'Error Calculating DeltaPES for pt {utils.get_patient_id(subdir)}, day {utils.get_day_id(subdir)}, breath {breath_id} saving deltaPES as NaN')
             deltaPes = np.nan
 
+        deltaPes_list.append([deltaPes, subdir, breath_id])
         # get binary truth for deltaPES, 0 if <20, 1 if >= 20
         deltaPes_binary = int(deltaPes>=20)
 
@@ -213,9 +211,9 @@ class Triplet_Generator:
         triplet['deltaPes_binary'] = deltaPes_binary
         triplet['deltaPes_clipped'] = triplet['deltaPes'].clip(upper=40)
 
-        return triplet, deltaPes_list, has_deltaPes
+        return triplet, deltaPes_list
 
-    def add_deltaPes_to_statics(self, all_patient_day_statics: object, deltaPes_list: object, has_deltaPes: object) -> object:
+    def add_deltaPes_to_statics(self, all_patient_day_statics: object, deltaPes_list: object) -> object:
         """
 
         Args:
@@ -228,16 +226,8 @@ class Triplet_Generator:
         """
         merge_columns = ['original_subdirectory', 'breath_id']
 
-        has_deltaPes = pd.DataFrame(has_deltaPes, columns=merge_columns)
-        has_deltaPes['has_deltaPes'] = 1
-
         # Save this to restore the index after the merge
         statics_index = all_patient_day_statics.index.names
-
-        # Merge the has_deltaPes column into statics
-        all_patient_day_statics = all_patient_day_statics.reset_index().merge(has_deltaPes,
-                                                                              how='left',
-                                                                              on=merge_columns).set_index(statics_index)
 
         # merge deltaPes into statics
         deltaPes_df = pd.DataFrame(deltaPes_list, columns=['deltaPes'] + merge_columns)
@@ -245,9 +235,6 @@ class Triplet_Generator:
         all_patient_day_statics = all_patient_day_statics.reset_index().merge(deltaPes_df,
                                                                               how='left',
                                                                               on=merge_columns).set_index(statics_index)
-
-        # The breaths that have deltaPes have been flagged and the rest should be 0
-        all_patient_day_statics['has_deltaPes'] = all_patient_day_statics['has_deltaPes'].fillna(0)
 
         # threshhold deltaPes, values above 40 will be clipped to 40
         all_patient_day_statics['deltaPes_clipped'] = all_patient_day_statics['deltaPes'].clip(upper=40)
@@ -258,14 +245,14 @@ class Triplet_Generator:
 
         return all_patient_day_statics
 
-    def create_final_statics(self, patient_day_statics_list: object, deltaPes_list: object, has_deltaPes: object) -> object:
+    def create_final_statics(self, patient_day_statics_list: object, deltaPes_list: object) -> object:
         """
 
         Args:
             patient_day_statics_list:
             deltaPes_list:
-            has_deltaPes:
         """
+
         all_patient_day_statics = pd.concat(patient_day_statics_list)
         all_patient_day_statics = all_patient_day_statics.set_index(['patient_id', 'day_id', 'breath_id'])
 
@@ -288,7 +275,7 @@ class Triplet_Generator:
                 all_patient_day_statics.filter(regex='^Double Trigger *', axis=1).sum(axis=1) == 1).astype(int)
 
         # put deltaPes information into statics file
-        all_patient_day_statics = self.add_deltaPes_to_statics(all_patient_day_statics, deltaPes_list, has_deltaPes)
+        all_patient_day_statics = self.add_deltaPes_to_statics(all_patient_day_statics, deltaPes_list)
 
         # save out statics files to triplets export directory
         all_patient_day_statics.to_hdf(Path(self.triplet_export_directory, 'statics.hdf'), key='statics')
@@ -357,15 +344,14 @@ class Triplet_Generator:
                                                                    one_hot_dyssynchronies)
 
                 # calculate deltaPes
-                triplet, deltaPes_list, has_deltaPes = self.calculate_deltaPes(triplet,
+                triplet, deltaPes_list = self.calculate_deltaPes(triplet,
                                                                                breath_id,
                                                                                subdir_name,
                                                                                deltaPes_list,
-                                                                               has_deltaPes,
                                                                                triplet_csv_filename)
 
         # return first element in these lists, with multithreading there will only be one item per list
-        return patient_day_statics_list[0], deltaPes_list[0], has_deltaPes[0]
+        return patient_day_statics_list[0], deltaPes_list[0]
 
     def generate_triplets(self, multiprocessing: object = False) -> object:
         """
@@ -386,22 +372,20 @@ class Triplet_Generator:
         n_workers = utils.num_workers(multiprocessing)
         # multiprocessing requires a list to loop over, a function object, and number of workers
         # for each subdir name in subdir names, get the results from each function call and append them to a list called results
-        results = pqdm(subdir_names, self.loop_through_triplets, n_jobs=n_workers, desc='Patient-Days of Triplets Generated')
+        results = pqdm(subdir_names, self.loop_through_triplets, n_jobs=1, desc='Patient-Days of Triplets Generated')
 
         # initialize empty lists to build
         patient_day_statics_list = []
         deltaPes_list = []
-        has_deltaPes = []
 
         # put together all results
         for result in results:
             # each result has structure [patient_day_statics_list, delta_pes_list, has_deltaPes]
             patient_day_statics_list.append(result[0])
             deltaPes_list.append(result[1])
-            has_deltaPes.append(result[2])
 
         # after looping through all triplet, create final statics file
-        self.create_final_statics(patient_day_statics_list, deltaPes_list, has_deltaPes)
+        self.create_final_statics(patient_day_statics_list, deltaPes_list)
 
         return self.triplet_export_directory
 
