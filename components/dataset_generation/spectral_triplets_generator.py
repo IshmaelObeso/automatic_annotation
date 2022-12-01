@@ -216,6 +216,7 @@ class Spectral_Triplet_Generator:
         # Now that we've looped through all of the patient day triplet subdirectories,
         # we have a list of all breaths that map to a spectral triplet.
         # We'll append a binary indicator has_spectral_triplet to the statics file.
+
         has_spectral_triplet = pd.DataFrame(has_spectral_triplet, columns=utils.MERGE_COLUMNS)
         has_spectral_triplet['has_spectral_triplet'] = 1
 
@@ -325,6 +326,7 @@ class Spectral_Triplet_Generator:
 
         # find the number of workers to use
         n_workers = utils.num_workers(multiprocessing)
+        print(f'{n_workers} Processes assigned to generating Spectral Triplets')
         # multiprocessing requires a list to loop over, a function object, and number of workers
         # for each subdir name in subdir names, get the results from each function call and append them to a list called results
         results = pqdm(subdir_names, self.loop_through_spectral_triplets, n_jobs=n_workers, desc='Patient-Days of Spectral Triplets Generated')

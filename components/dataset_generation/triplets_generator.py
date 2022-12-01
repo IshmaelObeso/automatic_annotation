@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import argparse
+import warnings
 from pathlib import Path
 from components.dataset_generation.utilities import utils, deltaPes_utils
 from pqdm.processes import pqdm
@@ -200,10 +201,13 @@ class Triplet_Generator:
             deltaPes = deltaPes_utils.calculate_deltaPes(triplet_csv_filename)
         # if there is a problem calculating deltaPES, save deltaPES as NaN
         except:
-            print(f'Error Calculating DeltaPES for pt {utils.get_patient_id(subdir)}, day {utils.get_day_id(subdir)}, breath {breath_id} saving deltaPES as NaN')
+            # print(f'\nError Calculating DeltaPES for pt {utils.get_patient_id(subdir)}, day {utils.get_day_id(subdir)}, breath {breath_id} saving deltaPES as NaN')
             deltaPes = np.nan
 
         deltaPes_list.append([deltaPes, subdir, breath_id])
+
+        # import pdb; pdb.set_trace()
+
         # get binary truth for deltaPES, 0 if <20, 1 if >= 20
         deltaPes_binary = int(deltaPes>=20)
 
@@ -333,6 +337,12 @@ class Triplet_Generator:
         # we will merge within the next loop
         one_hot_dyssynchronies = utils.one_hot_dyssynchronies(patient_day)
 
+        # check number of breaths. if num_breaths <3, output a warning (no triplet can be created with <3 breaths)
+        num_breaths = patient_day['breath_id'].max()
+        # warning won't interrupt program, but will let user know
+        # if num_breaths < 3:
+        #     print(f'Patient {patient_id}, Day {day_id} has less than 3 breaths, no triplets created.\n Recommend exclude from dataset')
+
         # Loop through each breath
         for breath_id in range(1, patient_day['breath_id'].max()):
 
@@ -370,6 +380,7 @@ class Triplet_Generator:
 
         # find the number of workers to use
         n_workers = utils.num_workers(multiprocessing)
+        print(f'{n_workers} Processes assigned to generating Triplets')
         # multiprocessing requires a list to loop over, a function object, and number of workers
         # for each subdir name in subdir names, get the results from each function call and append them to a list called results
         results = pqdm(subdir_names, self.loop_through_triplets, n_jobs=n_workers, desc='Patient-Days of Triplets Generated')
@@ -381,8 +392,15 @@ class Triplet_Generator:
         # put together all results
         for result in results:
             # each result has structure [patient_day_statics_list, delta_pes_list, has_deltaPes]
-            patient_day_statics_list.append(result[0])
-            deltaPes_list.append(result[1])
+            # if there is no result, because there are not >= 3 breaths, skip that result
+            try:
+                patient_day_statics_list.append(result[0])
+                deltaPes_list.append(result[1])
+            except:
+                continue
+
+        # make sure patient_day_statics_list has something, aka. there is a patient day with triplets. if not interrupt and raise exception
+        assert len(patient_day_statics_list) > 0, f'There must be patients in the dataset with triplets. None found, exiting'
 
         # after looping through all triplet, create final statics file
         self.create_final_statics(patient_day_statics_list, deltaPes_list)
