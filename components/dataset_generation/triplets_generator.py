@@ -372,7 +372,7 @@ class Triplet_Generator:
         n_workers = utils.num_workers(multiprocessing)
         # multiprocessing requires a list to loop over, a function object, and number of workers
         # for each subdir name in subdir names, get the results from each function call and append them to a list called results
-        results = pqdm(subdir_names, self.loop_through_triplets, n_jobs=1, desc='Patient-Days of Triplets Generated')
+        results = pqdm(subdir_names, self.loop_through_triplets, n_jobs=n_workers, desc='Patient-Days of Triplets Generated')
 
         # initialize empty lists to build
         patient_day_statics_list = []
