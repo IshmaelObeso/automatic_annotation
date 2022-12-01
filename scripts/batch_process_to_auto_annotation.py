@@ -2,18 +2,12 @@ import argparse
 import os
 import sys
 import shutil
-from pathlib import Path
-import pandas as pd
-
 
 sys.path.append('..')
 
 from components.dataset_generation import batch_annotation_generator, spectral_triplets_generator, triplets_generator
 from components.annotation_generation import annotated_dataset_generator, annotation_model, predictions_generator
 from components.annotation_generation.utilities.model_settings import MODELS_DICT
-
-import warnings
-warnings.filterwarnings('ignore')
 
 # This script creates annotations from raw REDVENT files
 # This script will run the batch annotator on raw patient-day files, organize them into output directories,
@@ -23,16 +17,29 @@ warnings.filterwarnings('ignore')
 # Then it will output those predictions to a directory with the raw files
 
 def main(
-        import_directory,
-        export_directory ='\\datasets',
-        vent_annotator_filepath='.\\batch_annotator\RipVent.BatchProcessor.exe',
-        thresholds_dict=None,
-        generate_triplets_and_statics=True,
-        generate_annotations=True,
-        filter_file_info=None,
-        delete_triplets_and_spectral_triplets=False,
-        multiprocessing=False
-         ):
+        import_directory: object,
+        export_directory: object = '\\datasets',
+        vent_annotator_filepath: object = '.\\batch_annotator\RipVent.BatchProcessor.exe',
+        thresholds_dict: object = None,
+        generate_triplets_and_statics: object = True,
+        generate_annotations: object = True,
+        filter_file_info: object = None,
+        delete_triplets_and_spectral_triplets: object = False,
+        multiprocessing: object = False
+         ) -> object:
+    """
+
+    Args:
+        import_directory:
+        export_directory:
+        vent_annotator_filepath:
+        thresholds_dict:
+        generate_triplets_and_statics:
+        generate_annotations:
+        filter_file_info:
+        delete_triplets_and_spectral_triplets:
+        multiprocessing:
+    """
 
     # # save thresholds to models from inputs
     for model, threshold in thresholds_dict.items():

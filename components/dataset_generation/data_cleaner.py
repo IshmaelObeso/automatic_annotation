@@ -12,8 +12,13 @@ class Data_Cleaner:
      like the triplets class.
     """
 
-    def __init__(self, filter_file_info=None, parent_directory=None):
+    def __init__(self, filter_file_info: object = None, parent_directory: object = None) -> object:
+        """
 
+        Args:
+            filter_file_info:
+            parent_directory:
+        """
         # save info about filtered tripelts if given
         self.filter_file_info = filter_file_info
 
@@ -25,7 +30,7 @@ class Data_Cleaner:
         except TypeError:
             pass
 
-    def check_for_duplicate_pt_days(self, directory):
+    def check_for_duplicate_pt_days(self, directory: object) -> object:
 
         """
         Function that checks directory for duplicate patient days,
@@ -33,6 +38,9 @@ class Data_Cleaner:
 
         :param directory: path to directory of patient days
         :return:
+
+        Args:
+            directory:
         """
 
         # Grab all the folders from their directories
@@ -91,13 +99,16 @@ class Data_Cleaner:
 
 
 
-    def check_for_invalid_subdirs(self, directory):
+    def check_for_invalid_subdirs(self, directory: object) -> object:
         """
         Function that checks directory for a TriggersAndArtifacts file, if none is found move the directory
         to the invalid directory and print out a message
 
         :param directory: path to directory of patient days
         :return:
+
+        Args:
+            directory:
         """
 
         # Grab all the folders from their directories
@@ -158,9 +169,12 @@ class Data_Cleaner:
             print('No patient days without TriggerAndArtifacts File Found!')
             return num_invalid, None
 
-    def get_include_pt_days(self, parent_directory):
+    def get_include_pt_days(self, parent_directory: object) -> object:
         """
         This function takes the filter file info and saves a list of patient days to include in our dataset
+
+        Args:
+            parent_directory:
 
         """
 
@@ -226,13 +240,12 @@ class Data_Cleaner:
         return include_pt_days
 
 
-    def check_for_validity(self, subdir_name):
+    def check_for_validity(self, subdir_name: object) -> object:
         """
         Function that checks a breath to see if we should include it in our dataset
 
-        :param subdir_name: name of the triplet subdirectory
-
-        :return: bool , True if triplet should be filtered, False if it should not be filtered
+        Args:
+            subdir_name:
 
         """
 

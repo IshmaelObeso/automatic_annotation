@@ -114,9 +114,13 @@ FREQ_BINS = 16
 MODES = ['psd', 'angle']
 
 
-def _get_context_blackslist(blacklist, context_breaths):
+def _get_context_blackslist(blacklist: object, context_breaths: object) -> object:
     '''
     Given a blacklist, return the surrounding breaths that should also be blacklisted
+
+    Args:
+        blacklist:
+        context_breaths:
     '''
 
     context_blacklist = []
@@ -128,7 +132,7 @@ def _get_context_blackslist(blacklist, context_breaths):
     return context_blacklist
 
 
-def get_artifact_blacklist(patient_day, num_breaths=3, breath_id_col='breath_id'):
+def get_artifact_blacklist(patient_day: object, num_breaths: object = 3, breath_id_col: object = 'breath_id') -> object:
     '''
     Identify the breaths with artifacts and return the breath_ids.
 
@@ -158,8 +162,9 @@ def get_artifact_blacklist(patient_day, num_breaths=3, breath_id_col='breath_id'
     return np.unique(artifact_blacklist + context_blacklist).tolist()
 
 
-def get_breath_length_blacklist(patient_day, num_breaths=3, min_length=0.25, max_length=10.0, time_col='TimeRel',
-                                breath_id_col='breath_id'):
+def get_breath_length_blacklist(patient_day: object, num_breaths: object = 3, min_length: object = 0.25, max_length: object = 10.0,
+                                time_col: object = 'TimeRel',
+                                breath_id_col: object = 'breath_id') -> object:
     '''
     Identify breaths that are either too long or too short to be considered.
 
@@ -191,8 +196,8 @@ def get_breath_length_blacklist(patient_day, num_breaths=3, min_length=0.25, max
                      too_long_context_blacklist).tolist()
 
 
-def one_hot_dyssynchronies(patient_day, breath_id_col='breath_id', dyssynchrony_mask_col='dyssynchrony_mask',
-                           min_breath_fraction=0.75):
+def one_hot_dyssynchronies(patient_day: object, breath_id_col: object = 'breath_id', dyssynchrony_mask_col: object = 'dyssynchrony_mask',
+                           min_breath_fraction: object = 0.75) -> object:
     '''
     Given the list of dyssynchrony codes, create a column for each and
     assign the entire breath 1 if the disynchrony's present and 0 if not.
@@ -275,7 +280,7 @@ def one_hot_dyssynchronies(patient_day, breath_id_col='breath_id', dyssynchrony_
     return full_one_hot_df
 
 
-def one_hot_artifacts(patient_day, breath_id_col='breath_id'):
+def one_hot_artifacts(patient_day: object, breath_id_col: object = 'breath_id') -> object:
     '''
     Given the list of artifact codes, create a column for each and
     assign the entire breath 1 if the artifact's present and 0 if not.
@@ -301,8 +306,8 @@ def one_hot_artifacts(patient_day, breath_id_col='breath_id'):
     return full_one_hot_df
 
 
-def create_breath_statics(patient_day, num_breaths=3, min_length=0.25, max_length=10.0, time_col='TimeRel',
-                          breath_id_col='breath_id'):
+def create_breath_statics(patient_day: object, num_breaths: object = 3, min_length: object = 0.25, max_length: object = 10.0, time_col: object = 'TimeRel',
+                          breath_id_col: object = 'breath_id') -> object:
     '''
     Create a statics file for each breath that contains the following columns:
         - Breath ID
@@ -342,7 +347,7 @@ def create_breath_statics(patient_day, num_breaths=3, min_length=0.25, max_lengt
     return statics
 
 
-def get_patient_id(filename):
+def get_patient_id(filename: object) -> object:
     '''
     Extract the patient ID from a filename using regex.
     '''
@@ -357,7 +362,7 @@ def get_patient_id(filename):
     return re.findall(patient_id_pattern, filename, flags=re.IGNORECASE)[0]
 
 
-def get_day_id(filename):
+def get_day_id(filename: object) -> object:
     '''
     Extract the day ID from a filename using regex.
     '''
@@ -371,7 +376,7 @@ def get_day_id(filename):
     return re.findall(day_id_pattern, filename, flags=re.IGNORECASE)[0]
 
 
-def create_patient_day_verification(annotation_progress, pseudo_test=False):
+def create_patient_day_verification(annotation_progress: object, pseudo_test: object = False) -> object:
     '''
     Create a dataframe that indicates which patient day directories have been reviewed
     by both Ben and Tatsu using the annotation progress Excel document Ben provided.
@@ -424,7 +429,8 @@ def create_patient_day_verification(annotation_progress, pseudo_test=False):
     return patient_day_verification
 
 
-def find_h0s_with_adjacent_h1(statics, truth_col, num_breaths=3, patient_id_col='patient_id', day_id_col='day_id'):
+def find_h0s_with_adjacent_h1(statics: object, truth_col: object, num_breaths: object = 3, patient_id_col: object = 'patient_id',
+                              day_id_col: object = 'day_id') -> object:
     '''
     ## TODO: Document
     '''
@@ -438,7 +444,7 @@ def find_h0s_with_adjacent_h1(statics, truth_col, num_breaths=3, patient_id_col=
         is_h0_with_adjacent_h1).fillna(0)
 
 
-def create_cooccurrence_column_via_or(statics, cooccurrence_col, combine_col_list):
+def create_cooccurrence_column_via_or(statics: object, cooccurrence_col: object, combine_col_list: object) -> object:
     '''
     Combines the two columns listed in combine_col_list into a new statics column
     named cooccurrence_col via boolean 'or'
@@ -464,7 +470,7 @@ def create_cooccurrence_column_via_or(statics, cooccurrence_col, combine_col_lis
     return statics
 
 
-def create_cooccurrence_column_via_and(statics, cooccurrence_col, combine_col_list):
+def create_cooccurrence_column_via_and(statics: object, cooccurrence_col: object, combine_col_list: object) -> object:
     '''
     Combines the two columns listed in combine_col_list into a new statics column
     named cooccurrence_col via boolean 'and'
@@ -485,8 +491,15 @@ def create_cooccurrence_column_via_and(statics, cooccurrence_col, combine_col_li
 
     return statics
 
-def num_workers(multiprocessing=False):
+def num_workers(multiprocessing: object = False) -> object:
+    """
 
+    Args:
+        multiprocessing:
+
+    Returns:
+
+    """
     if not multiprocessing:
         return 1
     elif mp.cpu_count() == 1:

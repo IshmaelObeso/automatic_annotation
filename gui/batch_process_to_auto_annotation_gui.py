@@ -9,7 +9,7 @@ sys.path.append('..')
 from scripts import batch_process_to_auto_annotation
 
 import warnings
-warnings.filterwarnings('ignore')
+
 
 
 # TODO: Make this tkinter gui OOP. It works without it, its just ugly :(
@@ -26,8 +26,7 @@ global filter_filepath
 
 def main():
 
-    # set color of gui
-    background_color = '#87d6d0'
+    warnings.filterwarnings('ignore')
 
     # create main application window
     app_window = tk.Tk()

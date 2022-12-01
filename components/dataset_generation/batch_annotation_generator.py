@@ -1,14 +1,15 @@
 import os
 import csv
 import tqdm
-import sys
 from datetime import datetime
 from pathlib import Path
 import argparse
+from typing import NoReturn
 from components.dataset_generation.data_cleaner import Data_Cleaner
 
 
 class Batch_Annotator:
+
     ''' This Class carries out all functions of the batch annotator.
 
     Inputs:
@@ -21,15 +22,31 @@ class Batch_Annotator:
 
     '''
 
-    def __init__(self, import_directory, export_directory='..\\datasets', RipVentBatchAnnotator_filepath = '..\\batch_annotator\RipVent.BatchProcessor.exe'):
+    def __init__(self, import_directory: object, export_directory: object = '..\\datasets',
+                 RipVentBatchAnnotator_filepath: object = '..\\batch_annotator\RipVent.BatchProcessor.exe') -> object:
+        """
 
+        Args:
+            import_directory:
+            export_directory:
+            RipVentBatchAnnotator_filepath:
+        """
         # setup directories
         self.import_directory = import_directory
         self.export_directory = export_directory
         self.RipVentBatchAnnotator_filepath = RipVentBatchAnnotator_filepath
 
-    def setup_directories(self, import_directory, export_directory, exe_path):
+    def setup_directories(self, import_directory: object, export_directory: object, exe_path: object) -> object:
+        """
 
+        Args:
+            import_directory:
+            export_directory:
+            exe_path:
+
+        Returns:
+
+        """
         # define paths
         import_directory = Path(import_directory.replace('"', '').replace("'", ''))
         export_directory = Path(export_directory.replace('"', '').replace("'", ''))
@@ -41,8 +58,16 @@ class Batch_Annotator:
 
         return import_directory.resolve(), export_directory.resolve(), exe_path.resolve()
 
-    def create_batch_csv(self, import_directory, export_directory):
+    def create_batch_csv(self, import_directory: object, export_directory: object) -> object:
+        """
 
+        Args:
+            import_directory:
+            export_directory:
+
+        Returns:
+
+        """
         ## create a csv file which will tell the batchprocessor to run across all files
         # save a list of each filename in the entry directory
         batch_csv = [x.name for x in import_directory.iterdir()]
@@ -61,20 +86,35 @@ class Batch_Annotator:
         return batch_csv_filepath
 
 
-    def run_batch_processor(self, import_directory, batch_csv_filepath, RipVentBatchAnnotator_filepath):
+    def run_batch_processor(self, import_directory: object, batch_csv_filepath: object, RipVentBatchAnnotator_filepath: object) -> object:
+        """
 
+        Args:
+            import_directory:
+            batch_csv_filepath:
+            RipVentBatchAnnotator_filepath:
+        """
         # run batch annotator and add read to allow for it to finish before moving on
         command = str(RipVentBatchAnnotator_filepath) + ' ' + str(import_directory) + ' ' + str(import_directory) + ' ' + str(batch_csv_filepath)
         os.popen(command).read()
 
 
-    def delete_csv(self, batch_csv_filepath):
+    def delete_csv(self, batch_csv_filepath: object) -> NoReturn:
+        """
 
+        Args:
+            batch_csv_filepath:
+        """
         # if we created a csv file we will remove it
         batch_csv_filepath.unlink()
 
-    def move_files_to_export_dir(self, import_directory, export_directory):
+    def move_files_to_export_dir(self, import_directory: object, export_directory: object) -> object:
+        """
 
+        Args:
+            import_directory:
+            export_directory:
+        """
         # list we will save files to export in
         export_files = []
         # list of strings all of our export files contain
@@ -98,8 +138,12 @@ class Batch_Annotator:
             export_filepath.rename(new_export_filepath)
 
 
-    def organize_export_dir(self, export_directory):
+    def organize_export_dir(self, export_directory: Path) -> NoReturn:
+        """
 
+        Args:
+            export_directory:
+        """
         # Grab the file names from the export directory
         unstructured_file_names = [x.name for x in export_directory.iterdir() if x.is_file()]
 
@@ -123,8 +167,17 @@ class Batch_Annotator:
                     # move file
                     unstructured_file_name_path.rename(export_filepath)
 
-    def batch_process(self, raw_import_directory, raw_export_directory, raw_RipVentBatchAnnotator_filepath):
+    def batch_process(self, raw_import_directory: object, raw_export_directory: object, raw_RipVentBatchAnnotator_filepath: object) -> object:
+        """
 
+        Args:
+            raw_import_directory:
+            raw_export_directory:
+            raw_RipVentBatchAnnotator_filepath:
+
+        Returns:
+
+        """
         print('Batch Processing Starting!')
 
         # # setup import and export directories
@@ -147,8 +200,12 @@ class Batch_Annotator:
         # return export directory for ease of use
         return export_directory
 
-    def batch_process_and_validate(self):
+    def batch_process_and_validate(self) -> object:
+        """
 
+        Returns:
+
+        """
         # instantiate data cleaner
         data_cleaner = Data_Cleaner()
 

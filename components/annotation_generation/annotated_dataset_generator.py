@@ -10,16 +10,29 @@ class AnnotatedDatasetGenerator:
      files with their corresponding annotations inside an artifact file"""
 
 
-    def __init__(self, raw_files_directory, spectral_triplets_directory):
+    def __init__(self, raw_files_directory: object, spectral_triplets_directory: object) -> object:
+        """
 
+        Args:
+            raw_files_directory:
+            spectral_triplets_directory:
+        """
         # setup directories
         self.annotated_dataset_directory,\
         self.raw_files_directory,\
         self.spectral_triplets_directory,\
         self.spectral_statics_filepath = self.setup_directories(raw_files_directory, spectral_triplets_directory)
 
-    def setup_directories(self, raw_files_directory, spectral_triplets_directory):
+    def setup_directories(self, raw_files_directory: object, spectral_triplets_directory: object) -> object:
+        """
 
+        Args:
+            raw_files_directory:
+            spectral_triplets_directory:
+
+        Returns:
+
+        """
         # define paths
         raw_files_directory = Path(raw_files_directory.replace('"', '').replace("'", ''))
         spectral_triplets_directory = Path(spectral_triplets_directory)
@@ -39,17 +52,25 @@ class AnnotatedDatasetGenerator:
                spectral_statics_filepath.resolve()
 
 
-    def save_predictions(self, predictions_df):
-        """ saves the raw predictions dataframe into csv and hdf """
+    def save_predictions(self, predictions_df: object) -> object:
+        """ saves the raw predictions dataframe into csv and hdf
+
+        Args:
+            predictions_df:
+        """
 
         # Write the statics file
         predictions_df.to_hdf(self.predictions_output_path_hdf, key='statics')
         predictions_df.to_csv(self.predictions_output_path_csv)
 
 
-    def get_breath_times(self, predictions_df):
+    def get_breath_times(self, predictions_df: object) -> object:
 
-        """ gets start and expiration times of breaths with associated predictions """
+        """ gets start and expiration times of breaths with associated predictions
+
+        Args:
+            predictions_df:
+        """
 
         # load spectral statics file
         spectral_statics = pd.read_csv(self.spectral_statics_filepath)
@@ -77,10 +98,13 @@ class AnnotatedDatasetGenerator:
         return predictions_df
 
 
-    def copy_raw_files(self, predictions_df):
+    def copy_raw_files(self, predictions_df: object) -> object:
 
         """ Copies raw files from raw files directory to annotated dataset directory,
-         only copies raw files that we have predictions for  """
+         only copies raw files that we have predictions for
+
+        Args:
+            predictions_df: """
 
         # grab all csv files from raw directory
         raw_csv_files = list(self.raw_files_directory.glob('*.csv'))
@@ -116,9 +140,14 @@ class AnnotatedDatasetGenerator:
 
         return patient_day_files_with_predictions
 
-    def create_art_files(self, predictions_df, models_dict):
+    def create_art_files(self, predictions_df: object, models_dict: object) -> object:
 
-        """ creates artifact files for every patient day we have predictions for from the binary predictions, and adds multitarget predictions if there is a multitarget prediction file"""
+        """ creates artifact files for every patient day we have predictions for from the binary predictions, and adds multitarget predictions if there is a multitarget prediction file
+
+        Args:
+            predictions_df:
+            models_dict:
+        """
 
         # get a list of all patient day files that we have predictions for and copy any raw patient day files we have
         # predictions for into the annotated dataset directory

@@ -1,10 +1,10 @@
-import tqdm
 import pandas as pd
 import numpy as np
 from pathlib import Path
 from components.annotation_generation import prediction_data_pipe
-from components.annotation_generation.utilities import utils
 from pqdm.processes import pqdm
+
+
 class PredictionAggregator:
 
     '''
@@ -12,17 +12,28 @@ class PredictionAggregator:
     '''
 
 
-    def __init__(self, spectral_triplets_directory):
+    def __init__(self, spectral_triplets_directory: object) -> object:
 
-        ''' initiate by setting up directory paths '''
+        ''' initiate by setting up directory paths 
+
+        Args:
+            spectral_triplets_directory: 
+        '''
 
         # setup directories
         self.spectral_triplets_directory,\
         self.predictions_output_path_csv,\
         self.predictions_output_path_hdf = self.setup_directories(spectral_triplets_directory=spectral_triplets_directory)
 
-    def setup_directories(self, spectral_triplets_directory):
+    def setup_directories(self, spectral_triplets_directory: object) -> object:
+        """
 
+        Args:
+            spectral_triplets_directory: 
+
+        Returns:
+
+        """
         spectral_triplets_directory = Path(spectral_triplets_directory)
 
         # put preds df in the parent directory of the spectral triplets directory
@@ -40,16 +51,24 @@ class PredictionAggregator:
                predictions_output_path_hdf.resolve()
 
 
-    def save_predictions(self, predictions_df):
-        """ saves the raw predictions dataframe into csv and hdf """
+    def save_predictions(self, predictions_df: object) -> object:
+        """ saves the raw predictions dataframe into csv and hdf 
+
+        Args:
+            predictions_df: 
+        """
 
         # Write the statics file
         predictions_df.to_hdf(self.predictions_output_path_hdf, key='statics')
         predictions_df.to_csv(self.predictions_output_path_csv)
 
-    def generate_all_predictions(self, models_dict):
+    def generate_all_predictions(self, models_dict: object) -> object:
 
-        ''' get dictionary with information about models, use this to generate predictions '''
+        ''' get dictionary with information about models, use this to generate predictions 
+
+        Args:
+            models_dict: 
+        '''
 
         # make list of predictions dataframes
         prediction_dfs = []
@@ -80,16 +99,26 @@ class PredictionAggregator:
 class PredictionGenerator:
     ''' Generates Prediction dataframe for binary model predictions '''
 
-    def __init__(self, spectral_triplet_directory, output_cols=['Double Trigger']):
+    def __init__(self, spectral_triplet_directory: object, output_cols: object = ['Double Trigger']) -> object:
+        """
 
+        Args:
+            spectral_triplet_directory: 
+            output_cols: 
+        """
         #instantiate dataset
         self.data_class = prediction_data_pipe.Data_Pipe(spectral_triplet_directory, output_cols=output_cols)
 
         self.output_cols = output_cols
 
-    def threshold_predictions(self, predictions_df, threshold_dict):
+    def threshold_predictions(self, predictions_df: object, threshold_dict: object) -> object:
 
-        """ Use a threshold to get binarized predictions for every breath"""
+        """ Use a threshold to get binarized predictions for every breath
+
+        Args:
+            predictions_df: 
+            threshold_dict: 
+        """
 
         # for every dyssynchrony threshold predictions and make new column
         for output_col in self.output_cols:
@@ -107,8 +136,15 @@ class PredictionGenerator:
         return predictions_df
 
 
-    def generate_predictions(self, uid):
+    def generate_predictions(self, uid: object) -> object:
+        """
 
+        Args:
+            uid: 
+
+        Returns:
+
+        """
         # get spectrograms for every uid
         xs, ys, ts, uid = self.data_class.__getitem__(uid)
 
@@ -137,8 +173,13 @@ class PredictionGenerator:
 
         return uid_df
 
-    def get_predictions(self, model_name, parameters):
-        """ get predictions for every spectral triplet in dataset, predictions will be output as hdf file"""
+    def get_predictions(self, model_name: object, parameters: object) -> object:
+        """ get predictions for every spectral triplet in dataset, predictions will be output as hdf file
+
+        Args:
+            model_name: 
+            parameters: 
+        """
 
         # get model parameters
         threshold_dict = parameters['threshold']

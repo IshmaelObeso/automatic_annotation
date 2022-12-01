@@ -147,4 +147,3 @@ dmypy.json
 cython_debug/
 
 !/Bennotator.exe
-!/Bennotator.spec

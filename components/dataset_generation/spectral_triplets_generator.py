@@ -29,8 +29,13 @@ class Spectral_Triplet_Generator:
 
         '''
 
-    def __init__(self, triplet_directory, filter_file_info=None):
+    def __init__(self, triplet_directory: object, filter_file_info: object = None) -> object:
+        """
 
+        Args:
+            triplet_directory:
+            filter_file_info:
+        """
         # # setup import and export directories
         self.triplet_directory, self.spectral_triplet_export_directory, self.triplet_statics_path, self.statics_directory = self.setup_directories(triplet_directory)
 
@@ -40,8 +45,15 @@ class Spectral_Triplet_Generator:
         # instantiate data cleaner
         self.data_cleaner = Data_Cleaner(filter_file_info, parent_directory=self.triplet_directory.parents[0])
 
-    def setup_directories(self, triplet_directory):
+    def setup_directories(self, triplet_directory: object) -> object:
+        """
 
+        Args:
+            triplet_directory:
+
+        Returns:
+
+        """
         # define paths
         triplet_directory = Path(triplet_directory)
 
@@ -65,8 +77,15 @@ class Spectral_Triplet_Generator:
                triplet_statics_path.resolve(),\
                statics_directory.resolve()
 
-    def setup_spectral_subdirectories(self, subdir_name):
+    def setup_spectral_subdirectories(self, subdir_name: object) -> object:
+        """
 
+        Args:
+            subdir_name:
+
+        Returns:
+
+        """
         triplet_subdir = Path(self.triplet_directory, subdir_name)
         spectral_triplet_subdir = Path(self.spectral_triplet_export_directory, subdir_name)
         spectral_triplet_subdir.mkdir(parents=True, exist_ok=True)
@@ -75,8 +94,16 @@ class Spectral_Triplet_Generator:
 
         return triplet_subdir, spectral_triplet_subdir, triplet_csv_file_names
 
-    def initialize_spectral_triplet(self, triplet_subdir, triplet_csv_file_name):
+    def initialize_spectral_triplet(self, triplet_subdir: object, triplet_csv_file_name: object) -> object:
+        """
 
+        Args:
+            triplet_subdir:
+            triplet_csv_file_name:
+
+        Returns:
+
+        """
         triplet = pd.read_csv(Path(triplet_subdir, triplet_csv_file_name))
 
         # Save the triplet id (which corresponds to the breath id) so
@@ -89,8 +116,22 @@ class Spectral_Triplet_Generator:
 
         return triplet, triplet_id, spectral_tensor, tensor_and_truth
 
-    def create_spectral_triplet(self, triplet, spectral_tensor, has_spectral_triplet, keep_triplets, subdir_name, triplet_id):
+    def create_spectral_triplet(self, triplet: object, spectral_tensor: object, has_spectral_triplet: object, keep_triplets: object,
+                                subdir_name: object,
+                                triplet_id: object) -> object:
+        """
 
+        Args:
+            triplet:
+            spectral_tensor:
+            has_spectral_triplet:
+            keep_triplets:
+            subdir_name:
+            triplet_id:
+
+        Returns:
+
+        """
         for mode in utils.MODES:
             for waveform_column in utils.WAVEFORM_COLUMNS:
                 spectrogram = signal.spectrogram(triplet[waveform_column],
@@ -142,8 +183,17 @@ class Spectral_Triplet_Generator:
 
         return triplet, spectral_tensor, has_spectral_triplet, keep_triplets
 
-    def save_spectral_triplet(self, tensor_and_truth, triplet, spectral_tensor, spectral_triplet_subdir, triplet_csv_file_name):
+    def save_spectral_triplet(self, tensor_and_truth: object, triplet: object, spectral_tensor: object, spectral_triplet_subdir: object,
+                              triplet_csv_file_name: object) -> object:
+        """
 
+        Args:
+            tensor_and_truth:
+            triplet:
+            spectral_tensor:
+            spectral_triplet_subdir:
+            triplet_csv_file_name:
+        """
         # Fill in the object to be pickled with the tensor and the triplet file containing the truth values
         tensor_and_truth['tensor'] = spectral_tensor
         tensor_and_truth['truth'] = triplet
@@ -153,8 +203,13 @@ class Spectral_Triplet_Generator:
         with open(spectral_triplet_pickle_file_name, 'wb') as file:
             pickle.dump(tensor_and_truth, file)
 
-    def finalize_statics(self, has_spectral_triplet, keep_triplets):
+    def finalize_statics(self, has_spectral_triplet: object, keep_triplets: object) -> object:
+        """
 
+        Args:
+            has_spectral_triplet:
+            keep_triplets:
+        """
         # read in statics file
         statics = pd.read_hdf(self.triplet_statics)
 
@@ -203,8 +258,15 @@ class Spectral_Triplet_Generator:
         statics.to_hdf(Path(self.statics_directory, 'spectral_statics.hdf'), key='statics')
         statics.to_csv(Path(self.statics_directory, 'spectral_statics.csv'))
 
-    def loop_through_spectral_triplets(self, subdir_name):
+    def loop_through_spectral_triplets(self, subdir_name: object) -> object:
+        """
 
+        Args:
+            subdir_name:
+
+        Returns:
+
+        """
         # A list to identify which breaths in statics actually have spectral triplets
         has_spectral_triplet = []
 
@@ -246,8 +308,15 @@ class Spectral_Triplet_Generator:
 
         return has_spectral_triplet, keep_triplets
 
-    def generate_spectral_triplets(self, multiprocessing=False):
+    def generate_spectral_triplets(self, multiprocessing: object = False) -> object:
+        """
 
+        Args:
+            multiprocessing:
+
+        Returns:
+
+        """
         # Grab the triplet folders from their directories
         p = Path(self.triplet_directory)
         subdir_names = [subdir.name for subdir in p.iterdir() if subdir.is_dir()]

@@ -17,7 +17,14 @@ class ChopDatBreathRightOnUp:
         jitter (int): Shift the entire window by a random number between -jitter / 2 and jitter / 2 ONLY IN TRAINING
     '''
 
-    def __init__(self, justification='left', max_length=900, offset=300):
+    def __init__(self, justification: object = 'left', max_length: object = 900, offset: object = 300) -> object:
+        """
+
+        Args:
+            justification:
+            max_length:
+            offset:
+        """
         # set attributes
         if justification not in ['left', 'center']:
             raise Exception('Justification must be either "left" or "center"')
@@ -26,8 +33,18 @@ class ChopDatBreathRightOnUp:
         self.max_length = max_length
         self.offset = offset
 
-    def forward(self, xs, ys, ts, uid):
+    def forward(self, xs: object, ys: object, ts: object, uid: object) -> object:
+        """
 
+        Args:
+            xs:
+            ys:
+            ts:
+            uid:
+
+        Returns:
+
+        """
         # Get the indices of all the non-nan y values
         non_nan_ys = np.where(~np.isnan(ys))[0]
 

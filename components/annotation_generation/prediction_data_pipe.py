@@ -4,6 +4,7 @@ import numpy as np
 from components.annotation_generation.utilities.transforms import ChopDatBreathRightOnUp
 from pathlib import Path
 
+
 class Data_Pipe:
     """
     This class takes a directory of spectral triplets and applies transforms to them in order to make them ready for
@@ -11,8 +12,18 @@ class Data_Pipe:
     at a time (aka batch size of 1)
     """
 
-    def __init__(self, spectral_triplets_directory, output_cols=['Double Trigger'], justification='left', max_length=900, offset=300):
+    def __init__(self, spectral_triplets_directory: object, output_cols: object = ['Double Trigger'], justification: object = 'left',
+                 max_length: object = 900,
+                 offset: object = 300) -> object:
+        """
 
+        Args:
+            spectral_triplets_directory:
+            output_cols:
+            justification:
+            max_length:
+            offset:
+        """
         # define the spectral triplets directory and path to the spectral statics file
         self.spectral_triplets_directory, self.spectral_triplets_statics_path = self.setup_directories(spectral_triplets_directory)
 
@@ -52,8 +63,15 @@ class Data_Pipe:
         self.max_length = max_length
         self.offset = offset
 
-    def setup_directories(self, spectral_triplets_directory):
+    def setup_directories(self, spectral_triplets_directory: object) -> object:
+        """
 
+        Args:
+            spectral_triplets_directory:
+
+        Returns:
+
+        """
         # define path
         spectral_triplets_directory = Path(spectral_triplets_directory)
 
@@ -62,9 +80,12 @@ class Data_Pipe:
 
         return spectral_triplets_directory, spectral_triplets_statics
 
-    def get_available_uids(self, spectral_triplets_statics):
+    def get_available_uids(self, spectral_triplets_statics: object) -> object:
         """
         Gets all uids that have an existing pickle file to load
+
+        Args:
+            spectral_triplets_statics:
         """
 
         # look for uids with corresponding pickle files.  these are the only ones which should be accessible in this dataset.
@@ -81,13 +102,19 @@ class Data_Pipe:
 
         return all_uids_pickle
 
-    def get_uids(self):
+    def get_uids(self) -> object:
 
         return self.all_uids
 
-    def transforms(self, xs, ys, ts, uid):
+    def transforms(self, xs: object, ys: object, ts: object, uid: object) -> object:
         """
         Applies any transforms needed
+
+        Args:
+            xs:
+            ys:
+            ts:
+            uid:
         """
         # instantiate transform classes
         spectral_transformer = ChopDatBreathRightOnUp(self.justification, self.max_length, self.offset)
