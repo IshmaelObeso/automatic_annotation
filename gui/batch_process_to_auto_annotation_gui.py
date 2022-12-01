@@ -102,14 +102,14 @@ def main():
     ent_generate_triplets_and_statics = ttk.Checkbutton(settings_tab, variable=generate_triplets_and_statics).grid(column=1, row=4, sticky='w')
 
     # create label and checkbox for generating annotations
-    lbl_generate_annotations = ttk.Label(settings_tab, text='Generate Annotations').grid(column=0, row=5)
-    generate_annotations = BooleanVar(value=True)
-    ent_generate_annotations = ttk.Checkbutton(settings_tab, variable=generate_annotations).grid(column=1, row=5, sticky='w')
+    lbl_generate_annotations = ttk.Label(settings_tab, text='Generate Annotations').grid(column=2, row=3)
+    generate_annotations = BooleanVar(value=False)
+    ent_generate_annotations = ttk.Checkbutton(settings_tab, variable=generate_annotations).grid(column=3, row=3, sticky='w')
 
     # create label and checkbox for deleting triplets and spectral triplets after generating statics
-    lbl_delete_triplets = ttk.Label(settings_tab, text='Delete Triplets and Spectral Triplets \n         after generating statics').grid(column=0, row=6)
+    lbl_delete_triplets = ttk.Label(settings_tab, text='Delete Triplets and Spectral Triplets \n         after generating statics').grid(column=2, row=4)
     delete_triplets = BooleanVar(value=False)
-    ent_delete_triplets = ttk.Checkbutton(settings_tab, variable=delete_triplets).grid(column=1, row=6, sticky='w')
+    ent_delete_triplets = ttk.Checkbutton(settings_tab, variable=delete_triplets).grid(column=3, row=4, sticky='w')
 
     ## Advanced Settings Tab
     # create label and entry field for Double Trigger Threshold

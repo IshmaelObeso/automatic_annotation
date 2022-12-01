@@ -203,7 +203,7 @@ class Triplet_Generator:
             has_deltaPes.append([subdir, breath_id])
         # if there is a problem calculating deltaPES, save deltaPES as NaN
         except:
-            print(f'Error Calculating DeltaPES for triplet: {breath_id}, saving deltaPES as NaN')
+            print(f'Error Calculating DeltaPES for pt {utils.get_patient_id(subdir)}, day {utils.get_day_id(subdir)},breath {breath_id} saving deltaPES as NaN')
             deltaPes = np.nan
 
         # get binary truth for deltaPES, 0 if <20, 1 if >= 20
