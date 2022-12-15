@@ -4,47 +4,54 @@ import tqdm
 from datetime import datetime
 from pathlib import Path
 import argparse
-from typing import NoReturn
 from components.dataset_generation.data_cleaner import Data_Cleaner
 
 
 class Batch_Annotator:
 
-    ''' This Class carries out all functions of the batch annotator.
+    ''' This Class turns a directory of raw REDVENT patient-day files into an
+        organized directory of batch processed patient-day files
 
-    Inputs:
-        Import directory --> String of path to directory where raw files to be annotated are placed
-        Export directory --> String of path to directory where structured files will be placed after going through batch processor.
-                            These files should be unannotated, they will be annotated by the model later in the pipe
-
-    Outputs:
-        Batch Annotations --> Directory with annotation files for every patient-day file provided in the import directory
+    Attributes:
+        raw_files_directory (str): directory where raw patient-day files are stored
+        export_directory (str): directory to store outputs
+        batch_processor_filepath (str): filepath to the batch processor .exe
 
     '''
 
-    def __init__(self, import_directory: object, export_directory: object = '..\\datasets',
-                 RipVentBatchAnnotator_filepath: object = '..\\batch_annotator\RipVent.BatchProcessor.exe') -> object:
+    def __init__(self, raw_files_directory: str, export_directory: str = '..\\datasets',
+                 batch_processor_filepath: str = '..\\batch_annotator\RipVent.BatchProcessor.exe') -> None:
         """
+        Sets initial class attributes
 
         Args:
-            import_directory:
-            export_directory:
-            RipVentBatchAnnotator_filepath:
-        """
-        # setup directories
-        self.import_directory = import_directory
-        self.export_directory = export_directory
-        self.RipVentBatchAnnotator_filepath = RipVentBatchAnnotator_filepath
-
-    def setup_directories(self, import_directory: object, export_directory: object, exe_path: object) -> object:
-        """
-
-        Args:
-            import_directory:
-            export_directory:
-            exe_path:
+            raw_files_directory (str): directory where raw patient-day files are stored
+            export_directory (str): directory to store outputs
+            batch_processor_filepath (str): filepath to the batch processor .exe
 
         Returns:
+            None:
+        """
+        # setup directories
+        self.raw_files_directory = raw_files_directory
+        self.export_directory = export_directory
+        self.batch_processor_filepath = batch_processor_filepath
+
+    def _setup_directories(self, import_directory: str, export_directory: str, exe_path: str) -> tuple[Path, Path, Path]:
+        """
+
+        This method takes import_directory, export_directory, and exe_paths as strings, creates the export directory
+        if it does not exist, and then returns these path strings as Path objects for ease-of-use later. It also changes
+        the export directory path to point to the batch_outputs folder in the export directory
+
+        Args:
+            import_directory (str): directory where raw patient-day files are stored
+            export_directory (str): directory to store outputs
+            exe_path (str): filepath to the batch processor .exe
+
+        Returns:
+            tuple[Path, Path, Path]: returns Paths of import_directory, export_directory, exe_path as Path objects for
+                                    easy manipulation
 
         """
         # define paths
@@ -58,14 +65,17 @@ class Batch_Annotator:
 
         return import_directory.resolve(), export_directory.resolve(), exe_path.resolve()
 
-    def create_batch_csv(self, import_directory: object, export_directory: object) -> object:
+    def _create_batch_csv(self, import_directory: Path, export_directory: Path) -> Path:
         """
+        This method creates a csv file (batch csv) which will tell the batch processor which files to run on
+        (all the ones in the import directory)
 
         Args:
-            import_directory:
-            export_directory:
+            import_directory (Path): Path object that stores directory where raw patient-day files are stored
+            export_directory (Path): Path object that stores directory to store outputs
 
         Returns:
+            batch_csv_filepath(Path): Path object that stores filepath to batch csv
 
         """
         ## create a csv file which will tell the batchprocessor to run across all files
@@ -86,34 +96,49 @@ class Batch_Annotator:
         return batch_csv_filepath
 
 
-    def run_batch_processor(self, import_directory: object, batch_csv_filepath: object, RipVentBatchAnnotator_filepath: object) -> object:
+    def _run_batch_processor(self, import_directory: Path, batch_csv_filepath: Path,
+                             RipVentBatchAnnotator_filepath: Path) -> None:
         """
+        This method uses popen to run the batch processor .exe over files in the import_directory and the batch_csv_file
 
         Args:
-            import_directory:
-            batch_csv_filepath:
-            RipVentBatchAnnotator_filepath:
+            import_directory (Path): Path object that stores directory where raw patient-day files are stored
+            batch_csv_filepath(Path): Path object that stores filepath to batch csv
+            RipVentBatchAnnotator_filepath (Path): Path object that stores filepath to the batch processor .exe
+
+        Returns:
+            None:
         """
         # run batch annotator and add read to allow for it to finish before moving on
         command = str(RipVentBatchAnnotator_filepath) + ' ' + str(import_directory) + ' ' + str(import_directory) + ' ' + str(batch_csv_filepath)
         os.popen(command).read()
 
 
-    def delete_csv(self, batch_csv_filepath: object) -> NoReturn:
+    def _delete_csv(self, batch_csv_filepath: Path) -> None:
         """
+        This method deletes the batch csv that was generated as an input for the batch processor.
+        After the batch processor is run this file is not needed, so we delete it
 
         Args:
-            batch_csv_filepath:
+            batch_csv_filepath (Path): Path object that stores filepath to batch csv
+
+        Returns:
+            None:
         """
         # if we created a csv file we will remove it
         batch_csv_filepath.unlink()
 
-    def move_files_to_export_dir(self, import_directory: object, export_directory: object) -> object:
+    def _move_files_to_export_dir(self, import_directory: Path, export_directory: Path) -> None:
         """
+        This method moves all files generated by the batch processor from the import directory to the batch_outputs
+        folder in the export directory
 
         Args:
-            import_directory:
-            export_directory:
+            import_directory (Path): Path object that stores directory where raw patient-day files are stored
+            export_directory (Path): Path object that stores directory to store outputs
+
+        Returns:
+            None:
         """
         # list we will save files to export in
         export_files = []
@@ -138,11 +163,16 @@ class Batch_Annotator:
             export_filepath.rename(new_export_filepath)
 
 
-    def organize_export_dir(self, export_directory: Path) -> NoReturn:
+    def _organize_export_dir(self, export_directory: Path) -> None:
         """
+        This method organizes batch processed files in the export directory. It creates directories for every patient-day
+        and places the batch processed filed into their corresponding directories
 
         Args:
-            export_directory:
+            export_directory (Path): Path object that stores directory to store outputs
+
+        Returns:
+            None:
         """
         # Grab the file names from the export directory
         unstructured_file_names = [x.name for x in export_directory.iterdir() if x.is_file()]
@@ -167,50 +197,57 @@ class Batch_Annotator:
                     # move file
                     unstructured_file_name_path.rename(export_filepath)
 
-    def batch_process(self, raw_import_directory: object, raw_export_directory: object, raw_RipVentBatchAnnotator_filepath: object) -> object:
+    def _batch_process(self, raw_files_directory: str, export_directory: str, batch_processor_filepath: str) -> Path:
         """
+        This method runs the batch processing pipeline, creates batch csv, runs the batch processor, delete batch csv,
+        move files to export directory, and organize files.
+
 
         Args:
-            raw_import_directory:
-            raw_export_directory:
-            raw_RipVentBatchAnnotator_filepath:
+            raw_files_directory (str): directory where raw patient-day files are stored
+            export_directory (str): directory to store outputs
+            batch_processor_filepath (str): filepath to the batch processor .exe
 
         Returns:
+            export_directory (Path): Path object that stores directory to store outputs
 
         """
         print('Batch Processing Starting!')
 
         # # setup import and export directories
-        import_directory, export_directory, RipVentBatchAnnotator_filepath = self.setup_directories(raw_import_directory, raw_export_directory, raw_RipVentBatchAnnotator_filepath)
+        import_directory, export_directory, RipVentBatchAnnotator_filepath = self._setup_directories(raw_files_directory, export_directory, batch_processor_filepath)
 
         # put methods together to run batch processor
-        batch_csv_filepath = self.create_batch_csv(import_directory, export_directory)
+        batch_csv_filepath = self._create_batch_csv(import_directory, export_directory)
         print('Creating Batch Files')
-        self.run_batch_processor(import_directory, batch_csv_filepath, RipVentBatchAnnotator_filepath)
+        self._run_batch_processor(import_directory, batch_csv_filepath, RipVentBatchAnnotator_filepath)
         print('Batch File Creation Finished')
-        self.delete_csv(batch_csv_filepath)
+        self._delete_csv(batch_csv_filepath)
         print('Moving Batch Files to Export dir')
-        self.move_files_to_export_dir(import_directory, export_directory)
+        self._move_files_to_export_dir(import_directory, export_directory)
         print('Batch Files Moved')
         print('Organizing Batch Files')
-        self.organize_export_dir(export_directory)
+        self._organize_export_dir(export_directory)
         print('Batch Files Organized')
         print('Batch Processing Done!')
 
         # return export directory for ease of use
         return export_directory
 
-    def batch_process_and_validate(self) -> object:
+    def batch_process_and_validate(self) -> Path:
         """
+        This method runs the batch processing pipeline then checks to see if batch processing worked for all patient-days
+        if there are patient days that batch processing failed, rerun those patient-days until they are processed properly
+        This happens because the batch processor .exe fails randomly sometimes
 
         Returns:
-
+            export_directory (Path): Path object that stores directory to store outputs
         """
         # instantiate data cleaner
         data_cleaner = Data_Cleaner()
 
         # batch process files
-        export_directory = self.batch_process(self.import_directory, self.export_directory, self.RipVentBatchAnnotator_filepath)
+        export_directory = self._batch_process(self.raw_files_directory, self.export_directory, self.batch_processor_filepath)
 
         ## check the batch files directory for errors
 
@@ -224,7 +261,7 @@ class Batch_Annotator:
         while num_invalid > 0:
 
             # batch process files
-            self.batch_process(invalid_dir, self.export_directory, self.RipVentBatchAnnotator_filepath)
+            self._batch_process(invalid_dir, self.export_directory, self.batch_processor_filepath)
 
             # check the num invalid again
             num_invalid, invalid_dir = data_cleaner.check_for_invalid_subdirs(export_directory)
@@ -238,20 +275,20 @@ if __name__ == "__main__":
 
     # Command Line Arguments
     p = argparse.ArgumentParser()
-    p.add_argument('--input_directory', type=str, default=None, help='Directory with raw unannotated files')
-    p.add_argument('--dataset_directory', type=str, default='..\\datasets', help='Directory to export organized unannotated files for later processing')
+    p.add_argument('--raw_files_directory', type=str, default=None, help='Directory with raw unannotated files')
+    p.add_argument('--export_directory', type=str, default='..\\datasets', help='Directory to export organized unannotated files for later processing')
     p.add_argument('--batch_annotator_filepath', type=str, default='..\\batch_annotator\RipVent.BatchProcessor.exe', help='Path to vent annotator')
     args = vars(p.parse_args())
 
     # define args
     input_directory = args['input_directory']
-    dataset_directory = args['dataset_directory']
+    export_directory = args['dataset_directory']
     batch_annotator_filepath = args['batch_annotator_filepath']
 
     # instantiate batch annotator class
-    batch_annotator = Batch_Annotator(input_directory, dataset_directory, batch_annotator_filepath)
+    batch_annotator = Batch_Annotator(input_directory, export_directory, batch_annotator_filepath)
 
     # run batch processor
-    export_directory = batch_annotator.batch_process()
+    export_directory = batch_annotator.batch_process_and_validate()
 
     print(f'Batch outputs generated at {export_directory}')

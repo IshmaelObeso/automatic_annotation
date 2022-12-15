@@ -206,7 +206,7 @@ def main():
         batch_process_to_auto_annotation.main(
             import_path_input,
             export_directory=export_path_input,
-            vent_annotator_filepath=exe_filepath_input,
+            batch_processor_exe_filepath=exe_filepath_input,
             generate_triplets_and_statics=generate_triplets_and_statics_input,
             generate_annotations=generate_annotations_input,
             thresholds_dict=threshold_dict,

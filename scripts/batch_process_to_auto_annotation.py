@@ -16,30 +16,48 @@ from components.annotation_generation.utilities.model_settings import MODELS_DIC
 # Then it will predict on every spectral triplet generated
 # Then it will output those predictions to a directory with the raw files
 
+# define some complex types
+ThresholdsDict = dict[str, float]
+FilterFileInfo = dict[dict[str, bool], dict[str, str], dict[dict[str, str], dict[str, str]]]
+
 def main(
-        import_directory: object,
-        export_directory: object = '\\datasets',
-        vent_annotator_filepath: object = '.\\batch_annotator\RipVent.BatchProcessor.exe',
-        thresholds_dict: object = None,
-        generate_triplets_and_statics: object = True,
-        generate_annotations: object = True,
-        filter_file_info: object = None,
-        delete_triplets_and_spectral_triplets: object = False,
-        multiprocessing: object = False
-         ) -> object:
+        raw_files_directory: str,
+        export_directory: str = '\\datasets',
+        batch_processor_exe_filepath: str = '.\\batch_annotator\RipVent.BatchProcessor.exe',
+        thresholds_dict: ThresholdsDict = None,
+        generate_triplets_and_statics: bool = True,
+        generate_annotations: bool = True,
+        filter_file_info: FilterFileInfo = None,
+        delete_triplets_and_spectral_triplets: bool = False,
+        multiprocessing: bool = False
+         ) -> None:
     """
+        This function will take raw REDVENT patient-day files and process them, users can flag how much processing should be done.
+        Basic functionality is as follows:
+        raw_patient_day_files --> batch_process raw files --> generate triplets --> generate spectral triplets --
+        --> generate predictions --> generate .art files (files that contain predictions) --> generate annotated dataset
+
+
 
     Args:
-        import_directory:
-        export_directory:
-        vent_annotator_filepath:
-        thresholds_dict:
-        generate_triplets_and_statics:
-        generate_annotations:
-        filter_file_info:
-        delete_triplets_and_spectral_triplets:
-        multiprocessing:
+        raw_files_directory (str): directory where raw patient-day files are stored
+        export_directory (str): directory to store outputs
+        batch_processor_exe_filepath (str): filepath to the batch processor .exe
+        thresholds_dict (Dict[str, Dict[str, float]]): dictionary with information about thresholds for models
+        generate_triplets_and_statics (bool): bool that controls whether to generate triplets and statics files
+        generate_annotations (bool): bool that controls whether to generate annotations
+        filter_file_info (Dict[str, bool]): dict that contains information about the filter file,
+                                            i.e. which columns to filter by
+        delete_triplets_and_spectral_triplets (bool): bool that controls whether to delete the triplets and spectral
+                                                    triplets directory after the program is finished (to save space)
+        multiprocessing (bool): bool that controls whether to multiprocess or not
+
+    Returns:
+        None:
     """
+
+    ## TODO: Implement input checker, to validate whether the inputs to main are valid,
+    ## this allows us to get rid of some scattered assert statements
 
     # # save thresholds to models from inputs
     for model, threshold in thresholds_dict.items():
@@ -53,10 +71,10 @@ def main(
 
         print('Generating triplets and statics must happen before generating Annotations. \n Generate Annotations set to True.')
 
-    assert import_directory is not None, 'Import Directory must be provided '
+    assert raw_files_directory is not None, 'Import Directory must be provided '
 
     # instantiate batch annotator class
-    batch_annotator = batch_annotation_generator.Batch_Annotator(import_directory, export_directory, vent_annotator_filepath)
+    batch_annotator = batch_annotation_generator.Batch_Annotator(raw_files_directory, export_directory, batch_processor_exe_filepath)
 
     # run batch annotator, save the directory it exports the batch annotations to
     batch_export_directory = batch_annotator.batch_process_and_validate()
@@ -83,6 +101,7 @@ def main(
         print(f'Spectral Triplets generated at {os.path.abspath(spectral_triplets_export_directory)}')
         print(f"Spectral Statics file generated at {os.path.abspath(spectral_statics_directory)}")
 
+        # if we want to generate annotations
         if generate_annotations:
 
             # instantiate models and save model objects to dict
@@ -101,7 +120,7 @@ def main(
             predictions_df = predictions_wrapper.generate_all_predictions(models_dict=MODELS_DICT)
 
             # instantiate annotated dataset generator
-            annotation_generator = annotated_dataset_generator.AnnotatedDatasetGenerator(raw_files_directory=import_directory, spectral_triplets_directory=spectral_triplets_export_directory)
+            annotation_generator = annotated_dataset_generator.AnnotatedDatasetGenerator(raw_files_directory=raw_files_directory, spectral_triplets_directory=spectral_triplets_export_directory)
 
             # create artifact file from binary predictions and info from model settings
             annotation_generator.create_art_files(predictions_df, models_dict=MODELS_DICT)
@@ -124,11 +143,12 @@ def main(
             print('Spectral Triplets Folder Deleted')
 
     print('----DONE----')
+
 if __name__ == "__main__":
 
     # Command Line Arguments
     p = argparse.ArgumentParser()
-    p.add_argument('--import_directory', type=str, default=None, help='Directory with raw unannotated files')
+    p.add_argument('--raw_files_directory', type=str, default=None, help='Directory with raw unannotated files')
     p.add_argument('--export_directory', type=str, default='\\datasets',
                    help='Directory to export datasets to')
     p.add_argument('--batch_processor_exe_filepath', type=str, default='.\\batch_annotator\RipVent.BatchProcessor.exe',
@@ -136,12 +156,12 @@ if __name__ == "__main__":
     p.add_argument('--generate_triplets_and_statics', type=bool, default=True)
     p.add_argument('--generate_annotations', type=bool, default=True)
     p.add_argument('--delete_triplets_and_spectral_triplets', type=bool, default=False)
-    p.add_argument('--double_trigger_threshold', type=float, default=.5)
-    p.add_argument('--auto_trigger_threshold', type=float, default=.5)
-    p.add_argument('--delayed_termination_threshold', type=float, default=.5)
-    p.add_argument('--flow_undershoot_threshold', type=float, default=.5)
-    p.add_argument('--premature_termination_threshold', type=float, default=.5)
-    p.add_argument('--reverse_trigger_threshold', type=float, default=.5)
+    p.add_argument('--double_trigger_threshold', type=float, default=.9)
+    p.add_argument('--auto_trigger_threshold', type=float, default=.9)
+    p.add_argument('--delayed_termination_threshold', type=float, default=.9)
+    p.add_argument('--flow_undershoot_threshold', type=float, default=.9)
+    p.add_argument('--premature_termination_threshold', type=float, default=.9)
+    p.add_argument('--reverse_trigger_threshold', type=float, default=.9)
     p.add_argument('--use_filter_file', type=bool, default=False)
     p.add_argument('--filter_filepath', type=str, default=None)
     p.add_argument('--exclude_columns_and_values',
@@ -152,9 +172,9 @@ if __name__ == "__main__":
     args = vars(p.parse_args())
 
     # define args
-    import_directory = args['import_directory']
+    raw_files_directory = args['import_directory']
     export_directory = args['export_directory']
-    vent_annotator_filepath = args['batch_processor_exe_filepath']
+    batch_processor_exe_filepath = args['batch_processor_exe_filepath']
     use_filter_file = args['use_filter_file']
     filter_filepath = args['filter_filepath']
     exclude_columns_and_values = args['exclude_columns_and_values']
@@ -162,6 +182,7 @@ if __name__ == "__main__":
     generate_annotations = args['generate_annotations']
     delete_triplets_and_spectral_triplets = args['delete_triplets_and_spectral_triplets']
     multiprocessing=args['multiprocessing']
+
     # threshold args
     double_trigger_threshold = args['double_trigger_threshold']
     auto_trigger_threshold = args['auto_trigger_threshold']
@@ -187,9 +208,9 @@ if __name__ == "__main__":
 
     # run main
     main(
-        import_directory,
+        raw_files_directory,
         export_directory,
-        vent_annotator_filepath,
+        batch_processor_exe_filepath,
         threshold_dict,
         generate_triplets_and_statics,
         generate_annotations,
