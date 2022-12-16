@@ -1,13 +1,13 @@
 import pandas as pd
 import numpy as np
-from scipy import signal
-
 import pickle
 import warnings
 import argparse
+
+from scipy import signal
 from pathlib import Path
 from components.dataset_generation.utilities import utils
-from components.dataset_generation.data_cleaner import Data_Cleaner
+from components.dataset_generation.datacleaner import DataCleaner
 from pqdm.processes import pqdm
 
 # silence pandas warning
@@ -16,55 +16,72 @@ pd.options.mode.chained_assignment = None
 # silence scipy divideby zero warning when waveform has discontinuity
 warnings.filterwarnings("ignore", message=".*divide")
 
-class Spectral_Triplet_Generator:
-    ''' This Class carries out all functions of the triplet generator.
+# define some complex types for typehints
+FilterFileInfo = dict[dict[str, bool], dict[str, str], dict[dict[str, str], dict[str, str]]]
 
-        Inputs:
-            triplet_files_directory --> Path to directory where outputs from the triplet generator are kept
-            Export directory --> Path to directory where outputs from the spectral triplet generator should be kept
 
-        Outputs:
-            Spectral Triplets directory --> Directory with spectral triplets generated for every breath triplet in the import directory
-            Statics File --> statics file with information on all patient-days provided in the import directory (csv and hdf)
+class SpectralTripletGenerator:
+    """
+    This class generates spectral triplets from triplet in the dataset
 
-        '''
+    Attributes:
+        triplet_directory (Path): directory where triplets from every patient-day are stored
+        filter_file_info (FilterFileInfo): dict that contains information about the filter file (if it is included), including
+                                what columns to filter over
+        spectral_triplet_export_directory (Path): Path to the directory where spectral triplets will be stored
+        triplet_statics_path (Path): path to the triplet statics file
+        statics_directory (Path): path to the directory where statics file will be stored
+        data_cleaner (DataCleaner): DataCleaner class that can do checks on the dataset and make sure it's clean
+        triplet_statics (Path): Path to the triplet statics file
 
-    def __init__(self, triplet_directory: object, filter_file_info: object = None) -> object:
+    """
+
+    def __init__(self, triplet_directory: Path, filter_file_info: FilterFileInfo = None) -> None:
         """
+        Sets initial class attributes
 
         Args:
-            triplet_directory:
-            filter_file_info:
-        """
-        # # setup import and export directories
-        self.triplet_directory, self.spectral_triplet_export_directory, self.triplet_statics_path, self.statics_directory = self.setup_directories(triplet_directory)
-
-        # get triplet statics file path
-        self.triplet_statics = Path(triplet_directory, 'statics.hdf')
-
-        # instantiate data cleaner
-        self.data_cleaner = Data_Cleaner(filter_file_info, parent_directory=self.triplet_directory.parents[0])
-
-    def setup_directories(self, triplet_directory: object) -> object:
-        """
-
-        Args:
-            triplet_directory:
+            triplet_directory (Path): directory where triplets from every patient-day are stored
+            filter_file_info (FilterFileInfo): dict that contains information about the filter file (if it is included), including
+                                               what columns to filter over
 
         Returns:
+            None:
+        """
+
+        # save attributes
+        self.triplet_directory = triplet_directory
+        self.filter_file_info = filter_file_info
+        # we will modify these later
+        self.spectral_triplet_export_directory = None
+        self.triplet_statics_path = None
+        self.statics_directory = None
+        self.data_cleaner = None
+        self.triplet_statics = None
+
+    def setup_directories(self, triplet_directory: Path) -> tuple[Path, Path, Path, Path]:
+        """
+        Sets up spectral_triplet_export_directory ,statics_directory, and triplet_statics_path from triplet_directory path
+
+        Args:
+            triplet_directory: directory where triplets from every patient-day are stored
+
+        Returns:
+            tuple[Path, Path, Path, Path]: Returns triplet_directory, spectral_triplets_export_directory,
+                                           triplet_statics_path, and statics_directory Paths
 
         """
+
         # define paths
         triplet_directory = Path(triplet_directory)
 
-        # put spectral triplets directory in directory where triplets directory is
+        # put spectral triplets directory in parent directory of triplets directory
         triplets_parent_directory = triplet_directory.parents[0]
         spectral_triplet_export_directory = Path(triplets_parent_directory, 'spectral_triplets')
+        spectral_triplet_export_directory.mkdir(parents=True, exist_ok=True)
 
         # create directory for statics files
         statics_directory = Path(triplets_parent_directory, 'statics')
-
-        spectral_triplet_export_directory.mkdir(parents=True, exist_ok=True)
         statics_directory.mkdir(parents=True, exist_ok=True)
 
         # get the triplet statics file path
@@ -75,33 +92,41 @@ class Spectral_Triplet_Generator:
                triplet_statics_path.resolve(),\
                statics_directory.resolve()
 
-    def setup_spectral_subdirectories(self, subdir_name: object) -> object:
+    def setup_spectral_subdirectories(self, subdir_name: str) -> tuple[Path, Path, list[str]]:
         """
+        Sets up paths to the spectral_triplet_subdirectory where we will save our spectral triplets for a specific patient-day
 
         Args:
-            subdir_name:
+            subdir_name: string of subdirectory name (patient-day triplet subdirectory)
 
         Returns:
+            tuple[Path, Path, list[str]]:
 
         """
+        # setup paths to triplet subdirectory and the spectral triplet subdirectory where spectral triplet will be saved
         triplet_subdir = Path(self.triplet_directory, subdir_name)
         spectral_triplet_subdir = Path(self.spectral_triplet_export_directory, subdir_name)
         spectral_triplet_subdir.mkdir(parents=True, exist_ok=True)
 
+        # get list of triplet files from the triplet subdirectory
         triplet_csv_file_names = [x.name for x in triplet_subdir.iterdir() if x.is_file()]
 
         return triplet_subdir, spectral_triplet_subdir, triplet_csv_file_names
 
-    def initialize_spectral_triplet(self, triplet_subdir: object, triplet_csv_file_name: object) -> object:
+    def initialize_spectral_triplet(self, triplet_subdir: Path, triplet_csv_file_name: str) -> tuple[pd.DataFrame, int, list[None], dict[None:None]]:
         """
+        Initialize empty tensor and dictionary to store spectral triplets data
 
         Args:
-            triplet_subdir:
-            triplet_csv_file_name:
+            triplet_subdir (Path): path to the patient-day subdirectory of triplets we are working with
+            triplet_csv_file_name (str): string of name of one triplet csv file we are working with
 
         Returns:
+            tuple[pd.DataFrame, int, list[None], dict[None:None]]: Returns triplet, triplet_id, spectral_tensor, and tensor_and_truth
 
         """
+
+        # load a triplet from csv
         triplet = pd.read_csv(Path(triplet_subdir, triplet_csv_file_name))
 
         # Save the triplet id (which corresponds to the breath id) so
@@ -114,22 +139,27 @@ class Spectral_Triplet_Generator:
 
         return triplet, triplet_id, spectral_tensor, tensor_and_truth
 
-    def create_spectral_triplet(self, triplet: object, spectral_tensor: object, has_spectral_triplet: object, keep_triplets: object,
-                                subdir_name: object,
-                                triplet_id: object) -> object:
+    def create_spectral_triplet(self, triplet: pd.DataFrame, spectral_tensor: list[None], has_spectral_triplet: list, keep_triplets: list,
+                                subdir_name: str,
+                                triplet_id: int) -> tuple[pd.DataFrame, np.ndarray, list, list]:
         """
+        Generates spectrogram of triplet waveform and saves it as numpy array, also keeps truth values from triplet
+        and stores indicators of whether a spectrogram was generated without infs (discontinuities) and
+        whether we should filter this triplet out.
 
         Args:
-            triplet:
-            spectral_tensor:
-            has_spectral_triplet:
-            keep_triplets:
-            subdir_name:
-            triplet_id:
+            triplet (pd.DataFrame): DataFrame with triplet information
+            spectral_tensor (list[None]): empty list where spectrogram generated from triplet will be stored
+            has_spectral_triplet (list): list that stores indicator of whether a spectral triplet was generated for each triplet
+            keep_triplets (list): list that stores indicator if we should keep the triplet based on filter file
+            subdir_name (str): string that stores the name of the patient-day subdirectory we are working with
+            triplet_id (int): the id of the triplet we are turning into spectrogram
 
         Returns:
+            tuple[pd.DataFrame, np.ndarray, list, list]: Returns triplet, filled spectral tensor, has_spectral_triplet, and keep_triplets
 
         """
+
         for mode in utils.MODES:
             for waveform_column in utils.WAVEFORM_COLUMNS:
                 spectrogram = signal.spectrogram(triplet[waveform_column],
@@ -181,18 +211,23 @@ class Spectral_Triplet_Generator:
 
         return triplet, spectral_tensor, has_spectral_triplet, keep_triplets
 
-    def save_spectral_triplet(self, tensor_and_truth: object, triplet: object, spectral_tensor: object, spectral_triplet_subdir: object,
-                              triplet_csv_file_name: object) -> object:
+    def save_spectral_triplet(self, tensor_and_truth: dict, triplet: pd.DataFrame, spectral_tensor: np.ndarray, spectral_triplet_subdir: Path,
+                              triplet_csv_file_name: str) -> None:
         """
+        Saves the spectral triplet into the spectral patient-day subdirectory as a .pickle file
 
         Args:
-            tensor_and_truth:
-            triplet:
-            spectral_tensor:
-            spectral_triplet_subdir:
-            triplet_csv_file_name:
+            tensor_and_truth (list[None]): Empty dict that gets filled with the ndarray of the spectrogram and the truth values for that spectrogram
+            triplet (pd.DataFrame): DataFrame of truth values of the triplet
+            spectral_tensor (np.ndarray): ndarray of the spectrogram generated from triplet waveform
+            spectral_triplet_subdir (Path): patient-day subdirectory where spectral triplet will be saved
+            triplet_csv_file_name (str): filename of the triplet, spectrol triplet .pickle file will have same name, but
+                                        will be saved in spectral triplet subdirectory
+
+        Returns:
+            None:
         """
-        # Fill in the object to be pickled with the tensor and the triplet file containing the truth values
+        # Fill in the dict to be pickled with the tensor and the triplet file containing the truth values
         tensor_and_truth['tensor'] = spectral_tensor
         tensor_and_truth['truth'] = triplet
 
@@ -201,20 +236,27 @@ class Spectral_Triplet_Generator:
         with open(spectral_triplet_pickle_file_name, 'wb') as file:
             pickle.dump(tensor_and_truth, file)
 
-    def finalize_statics(self, has_spectral_triplet: object, keep_triplets: object) -> object:
+    def finalize_statics(self, has_spectral_triplet: list, keep_triplets: list) -> None:
         """
+        Adds columns to statics file that indicate whether a spectral triplet has been generated for a given patient, day, breath,
+        and a column that indicates whether a given patient, day, breath should be filtered out of the dataset based
+        on a given filtering file
 
         Args:
-            has_spectral_triplet:
-            keep_triplets:
-        """
-        # read in statics file
-        statics = pd.read_hdf(self.triplet_statics)
+            has_spectral_triplet (list): list that stores indicator of whether a spectral triplet was generated for each triplet
+            keep_triplets (list): list that stores indicator if we should keep the triplet based on filter file
 
-        # Now that we've looped through all of the patient day triplet subdirectories,
+        Returns:
+            None:
+        """
+
+        # read in statics file
+        # explicitly return DataFrame object for clarity
+        statics = pd.DataFrame(pd.read_hdf(self.triplet_statics))
+
+        # Now that we've looped through patient day triplet subdirectories,
         # we have a list of all breaths that map to a spectral triplet.
         # We'll append a binary indicator has_spectral_triplet to the statics file.
-
         has_spectral_triplet = pd.DataFrame(has_spectral_triplet, columns=utils.MERGE_COLUMNS)
         has_spectral_triplet['has_spectral_triplet'] = 1
 
@@ -248,7 +290,6 @@ class Spectral_Triplet_Generator:
         # the breaths that we should keep have been flagged, and the rest should be 0
         statics['keep_triplet'] = statics['keep_triplet'].fillna(0)
 
-
         # save out statics files to spectral triplets export directory
         statics.to_hdf(Path(self.spectral_triplet_export_directory, 'spectral_statics.hdf'), key='statics')
         statics.to_csv(Path(self.spectral_triplet_export_directory, 'spectral_statics.csv'))
@@ -257,15 +298,23 @@ class Spectral_Triplet_Generator:
         statics.to_hdf(Path(self.statics_directory, 'spectral_statics.hdf'), key='statics')
         statics.to_csv(Path(self.statics_directory, 'spectral_statics.csv'))
 
-    def loop_through_spectral_triplets(self, subdir_name: object) -> object:
+    def loop_through_spectral_triplets(self, subdir_name: str) -> tuple[list, list]:
         """
+        Loops through all triplets in a patient-day, creates spectrograms from their waveforms,
+        saves them as spectral triplets and then returns information about has_spectral_triplets and keep_triplets
+        for inclusion in the final statics
+
 
         Args:
-            subdir_name:
+            subdir_name (str): string that stores the name of the patient-day subdirectory we are working with
 
         Returns:
+            tuple[list, list]: Returns has_spectral_triplets and keep_triplets which are indicators for whether a
+                                spectrogram was generated for a given triplet and whether we should filter out a given
+                                triplet based on a filter file
 
         """
+
         # A list to identify which breaths in statics actually have spectral triplets
         has_spectral_triplet = []
 
@@ -298,13 +347,23 @@ class Spectral_Triplet_Generator:
 
     def generate_spectral_triplets(self, multiprocessing: bool = False) -> Path:
         """
+        Creates spectral triplets in parallel (if flag is true), then saves them out and creates a statics file for them
 
         Args:
-            multiprocessing:
+            multiprocessing: Boolean flag whether to multiprocess or not
 
         Returns:
+            Path: returns path to the directory where we saved all our spectral triplets
 
         """
+        # setup directories
+        self.triplet_directory, self.spectral_triplet_export_directory, self.triplet_statics_path, self.statics_directory = self.setup_directories(self.triplet_directory)
+
+        # get the triplet statics filepath
+        self.triplet_statics = Path(self.triplet_directory, 'statics.hdf')
+
+        # instantiate data cleaner
+        self.data_cleaner = DataCleaner(self.filter_file_info, parent_directory=self.triplet_directory.parents[0])
 
         # Grab the triplet folders from their directories
         p = Path(self.triplet_directory)
@@ -330,6 +389,7 @@ class Spectral_Triplet_Generator:
 
         return self.spectral_triplet_export_directory
 
+
 # if running this file directly, only do do spectral triplet generation
 if __name__ == "__main__":
 
@@ -342,7 +402,7 @@ if __name__ == "__main__":
     input_directory = args['input_directory']
 
     # instantiate spectral triplet generator class
-    spectral_triplet_generator = Spectral_Triplet_Generator(input_directory)
+    spectral_triplet_generator = SpectralTripletGenerator(input_directory)
 
     # run spectral triplet generator
     export_directory = spectral_triplet_generator.generate_spectral_triplets()

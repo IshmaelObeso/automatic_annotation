@@ -82,7 +82,7 @@ def main(
     if generate_triplets_and_statics:
 
         # instantiate triplet generator class, and include a filter filepath if given one
-        triplet_generator = triplets_generator.Triplet_Generator(batch_export_directory)
+        triplet_generator = triplets_generator.TripletGenerator(batch_export_directory)
 
         # run triplet generator
         triplet_export_directory = triplet_generator.generate_triplets(multiprocessing)
@@ -92,7 +92,7 @@ def main(
         print(f"Statics file generated at {os.path.abspath(triplet_statics_directory)}")
 
         # instantiate spectral triplet generator class
-        spectral_triplet_generator = spectral_triplets_generator.Spectral_Triplet_Generator(triplet_export_directory, filter_file_info=filter_file_info)
+        spectral_triplet_generator = spectral_triplets_generator.SpectralTripletGenerator(triplet_export_directory, filter_file_info=filter_file_info)
 
         # run spectral triplet generator
         spectral_triplets_export_directory = spectral_triplet_generator.generate_spectral_triplets(multiprocessing)

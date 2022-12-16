@@ -6,7 +6,7 @@ import shutil
 from components.dataset_generation.utilities import utils
 
 
-class Data_Cleaner:
+class DataCleaner:
     """
     Class that catches and fixes errors in the pipe before they cause issues with the processor classes,
      like the triplets class.

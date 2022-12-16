@@ -5,30 +5,33 @@ from pathlib import Path
 from components.dataset_generation.utilities import utils, deltaPes_utils
 from pqdm.processes import pqdm
 
+# define some complex types for typehints
 FilterFileInfo = dict[dict[str, bool], dict[str, str], dict[dict[str, str], dict[str, str]]]
+DeltaPesList = list[list[float, str, str]]
 
-class Triplet_Generator:
 
-    ''' This Class carries out all functions of the triplet generator.
+class TripletGenerator:
+    """
+    This class generates triplets from every patient-day in the dataset
 
-        Inputs:
-            batch_files_directory --> Path to directory where outputs from the batch annotator are kept
-            Export directory --> Path to directory where outputs from the triplet generator should be kept
+    Attributes:
+        batch_files_directory (Path): directory where batch-processed patient-day files are stored
+        filter_file_info (FilterFileInfo): dict that contains information about the filter file (if it is included), including
+                                what columns to filter over
+        triplet_export_directory (Path): path to directory where triplets will be stored
+        statics_directory (Path): path to directory where statics files will be stored
 
-        Outputs:
-            Triplets directory --> Directory with triplets generated for every patient-day csv provided in the import directory
-            Statics File --> statics file with information on all patient-days provided in the import directory(csv and hdf)
-
-        '''
+    """
 
     def __init__(self, batch_files_directory: Path, filter_file_info: FilterFileInfo = None) -> None:
         """
         Sets initial class attributes
 
         Args:
-            batch_files_directory: Path object that stores path to the batch files directory, where outputs from
+            batch_files_directory (Path): Path object that stores path to the batch files directory, where outputs from
                                    the batch processor are stored
-            filter_file_info: dict that contains information about the filter file, including which columns to filter over
+            filter_file_info (FilterFileInfo): dict that contains information about the filter file,
+                                               including which columns to filter over
 
         Returns:
             None:
@@ -37,6 +40,10 @@ class Triplet_Generator:
         # save attributes
         self.batch_files_directory = batch_files_directory
         self.filter_file_info = filter_file_info
+        # we will modify these later
+        self.triplet_export_directory = None
+        self.statics_directory = None
+
 
     def _setup_directories(self, batch_files_directory: Path) -> tuple[Path, Path, Path]:
         """
@@ -213,7 +220,7 @@ class Triplet_Generator:
         return triplet, triplet_csv_filename
 
     def _calculate_deltaPes(self, triplet: pd.DataFrame, breath_id: int, subdir: str,
-                            deltaPes_list: list[list[float, str, str]]) -> tuple[pd.DataFrame, list[list[float, str, str]]]:
+                            deltaPes_list: DeltaPesList) -> tuple[pd.DataFrame, DeltaPesList]:
         """
         Calculates deltaPes of the central breath of the triplet and saves that information for later
 
@@ -221,11 +228,10 @@ class Triplet_Generator:
             triplet (pd.DataFrame): DataFrame with information about the triplet
             breath_id (int): string of breath id of this triplet
             subdir (str): string of subdirectory where triplet should be stored
-            deltaPes_list (list[list[float, str, str]]): list of breaths that have deltaPes recorded, and information about those breaths
-            triplet_csv_filename (Path): Path object that stores the path to where the triplet csv file should be stored
+            deltaPes_list (DeltaPesList): list of breaths that have deltaPes recorded, and information about those breaths
 
         Returns:
-            tuple[pd.DataFrame, list[list[float, str, str]]]: returns triplet and deltaPes_list with deltaPes information added
+            tuple[pd.DataFrame, DeltaPesList]: returns triplet and deltaPes_list with deltaPes information added
 
         """
 
@@ -248,14 +254,14 @@ class Triplet_Generator:
 
         return triplet, deltaPes_list
 
-    def _add_deltaPes_to_statics(self, all_patient_day_statics: pd.DataFrame, deltaPes_list: list[list[float, str, str]]) -> pd.DataFrame:
+    def _add_deltaPes_to_statics(self, all_patient_day_statics: pd.DataFrame, deltaPes_list: DeltaPesList) -> pd.DataFrame:
         """
         Adds deltaPes information to the statics file
 
         Args:
             all_patient_day_statics (pd.DataFrame): DataFrame with summary information (statics) about all patient-days
                                                     in the dataset
-            deltaPes_list (list[list[float, str, str]]): list of all triplets in the dataset that have deltaPes calculated
+            deltaPes_list (DeltaPesList): list of all triplets in the dataset that have deltaPes calculated
 
         Returns:
             pd.DataFrame: Dataframe of all_patient_days_statics with deltaPes information added
@@ -283,13 +289,13 @@ class Triplet_Generator:
 
         return all_patient_day_statics
 
-    def _create_final_statics(self, patient_day_statics_list: list[list[float, str, str]], deltaPes_list: list[list[float, str, str]]) -> None:
+    def _create_final_statics(self, patient_day_statics_list: list[pd.DataFrame], deltaPes_list: DeltaPesList) -> None:
         """
         Concantenates all the patient_day statics DataFrames into one large dataframe for all patient-days in the dataset
 
         Args:
-            patient_day_statics_list (list[list[float, str, str]]): list of all triplets that have a statics file made for them
-            deltaPes_list (list[list[float, str, str]]): list of all triplets in the dataset that have deltaPes calculated
+            patient_day_statics_list (list[pd.DataFrame]): list of all triplets that have a statics file made for them
+            deltaPes_list (DeltaPesList): list of all triplets in the dataset that have deltaPes calculated
 
         Returns:
             None:
@@ -327,7 +333,7 @@ class Triplet_Generator:
         all_patient_day_statics.to_hdf(Path(self.statics_directory, 'statics.hdf'), key='statics')
         all_patient_day_statics.to_csv(Path(self.statics_directory, 'statics.csv'))
 
-    def _loop_through_triplets(self, subdir_name: str) -> tuple[pd.DataFrame, list[list[float, str, str]]]:
+    def _loop_through_triplets(self, subdir_name: str) -> tuple[pd.DataFrame, DeltaPesList]:
         """
         Loops through all triplets in a patient-day, saves them, and then returns information about deltaPes and statics for inclusion in the final statics
 
@@ -335,7 +341,7 @@ class Triplet_Generator:
             subdir_name (str): string of subdirectory where triplet should be stored
 
         Returns:
-            tuple[pd.DataFrame, list[list[float, str, str]]]: Returns patient_day_statics and deltaPes_list
+            tuple[pd.DataFrame, DeltaPesList]: Returns patient_day_statics and deltaPes_list
 
         """
         # a temporary list of deltaPes calculations per breath
@@ -433,6 +439,7 @@ class Triplet_Generator:
 
         return self.triplet_export_directory
 
+
 # if running this file directly, only do triplet generation
 if __name__ == "__main__":
 
@@ -445,7 +452,7 @@ if __name__ == "__main__":
     input_directory = args['input_directory']
 
     # instantiate triplet generator class
-    triplet_generator = Triplet_Generator(input_directory)
+    triplet_generator = TripletGenerator(input_directory)
 
     # run triplet generator
     export_directory = triplet_generator.generate_triplets()

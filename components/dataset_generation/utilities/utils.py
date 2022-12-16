@@ -375,60 +375,6 @@ def get_day_id(filename: str) -> str:
 
     return re.findall(day_id_pattern, filename, flags=re.IGNORECASE)[0]
 
-
-def create_patient_day_verification(annotation_progress: object, pseudo_test: object = False) -> object:
-    '''
-    Create a dataframe that indicates which patient day directories have been reviewed
-    by both Ben and Tatsu using the annotation progress Excel document Ben provided.
-
-    Args:
-        annotation_progress (pd.DataFrame): Excel sheet provided by Ben in DataFrame format
-        pseudo_test (bool): If False, produce data based only on the '1file:pt' column.
-                            If True, use data that is does NOT have '1file:pt' but is
-                            validated by both Tatsu and Ben in the 'Reviewed By:' column.
-
-    Returns:
-        patient_day_verification (pd.DataFrame): The patient_id, day_id and a binary indicator of
-        whether or not both Ben and Tatsu have reviewed the file
-    '''
-    # Initialize empty DataFrame
-    patient_day_verification = pd.DataFrame()
-
-    # !! WARNING !! This assumes a lot about the file Ben provided
-    # We anticipate the format of this file to remain constant, but be weary any time data is pulled
-    # that these column names may change
-
-    # Extract the patient_id from the 'File' column
-    patient_day_verification['patient_id'] = annotation_progress['File'].apply(
-        lambda filename: get_patient_id(filename))
-
-    # Extract the day_id from the 'File' column (hacky fix: use '_' along with get_day_id because these are structured
-    # slightly differently than the directory names
-    patient_day_verification['day_id'] = annotation_progress['File'].apply(lambda filename: get_day_id(filename + '_'))
-
-    # If the 'Reviewed by:' contains some form of 'Ben, Tatsu', 'Tatsu, Ben', etc., it has been double reviewed and is
-    # safe to use in model building
-    patient_day_verification['double_reviewed_orig'] = (annotation_progress['Reviewed by:'].str.lower().str.contains(
-        'ben') &
-                                                        annotation_progress['Reviewed by:'].str.lower().str.contains(
-                                                            'tatsu')) * 1
-
-    # The above double_reviewed column is deprecated.
-    # Ben let us know that we should be using 1file:pt as a column to indicate whether or not
-    # a patient day is ready for use in model building.
-    patient_day_verification['double_reviewed'] = annotation_progress['1file:pt'].fillna(0).astype(int)
-
-    # If we're creating a pseudo test set we'll find which files are not included in our train/test/val
-    # split but have been validated on the first round by both Ben and Tatsu
-    if pseudo_test:
-        patient_day_verification['double_reviewed'] = ((patient_day_verification['double_reviewed'] == 0) &
-                                                       (patient_day_verification['double_reviewed_orig'] == 1)) * 1
-
-    patient_day_verification = patient_day_verification.set_index(['patient_id', 'day_id']).sort_index()
-
-    return patient_day_verification
-
-
 def find_h0s_with_adjacent_h1(statics: object, truth_col: object, num_breaths: object = 3, patient_id_col: object = 'patient_id',
                               day_id_col: object = 'day_id') -> object:
     '''

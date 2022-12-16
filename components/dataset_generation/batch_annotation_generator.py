@@ -1,10 +1,11 @@
 import os
 import csv
 import tqdm
+import argparse
+
 from datetime import datetime
 from pathlib import Path
-import argparse
-from components.dataset_generation.data_cleaner import Data_Cleaner
+from components.dataset_generation.datacleaner import DataCleaner
 
 
 class Batch_Annotator:
@@ -244,7 +245,7 @@ class Batch_Annotator:
             export_directory (Path): Path object that stores directory to store outputs
         """
         # instantiate data cleaner
-        data_cleaner = Data_Cleaner()
+        data_cleaner = DataCleaner()
 
         # batch process files
         export_directory = self._batch_process(self.raw_files_directory, self.export_directory, self.batch_processor_filepath)

@@ -1,29 +1,5 @@
-import matplotlib.pyplot as plt
 import pandas as pd
-import numpy as np
 import datetime as dt
-import re
-
-
-def extract_breath_info(breath_filepath: object) -> object:
-    """
-
-    Args:
-        breath_filepath:
-
-    Returns:
-
-    """
-    patient_id_pattern = 'pt?(\d*)_'
-    day_id_pattern = 'day(\d*)[^\d]'
-    breath_id_pattern = 'breath_?(\d*)'
-
-
-    patient = re.findall(patient_id_pattern, breath_filepath, flags=re.IGNORECASE)[0]
-    day = re.findall(day_id_pattern, breath_filepath, flags=re.IGNORECASE)[0]
-    breath = re.findall(breath_id_pattern, breath_filepath, flags=re.IGNORECASE)[0]
-
-    return patient, day, breath
 
 
 def get_inspiration_expiration_triggers(triplet: object, deliniation_column: object) -> object:
