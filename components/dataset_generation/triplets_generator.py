@@ -421,7 +421,6 @@ class Triplet_Generator:
 
         # put together results
         patient_day_statics_list = [result[0] for result in results]
-
         # nested list comprehension (does .extend instead of .append essentially)
         # [variable_to_extend_with for OUTER LOOP (item in list) for INNER LOOP (variable_to_extend_with in list)]
         deltaPes_list = [deltaPes_result for result in results for deltaPes_result in result[1]]
