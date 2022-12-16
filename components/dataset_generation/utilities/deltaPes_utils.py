@@ -151,7 +151,7 @@ def get_ymin(triplet: object, esophogeal_manometry_column: object, current_expir
     return current_expiration_ymin, current_expiration_ymin_idx
 
 
-def calculate_deltaPes(breath_filepath: object, inspiration_surround_s: object = .1, expiration_surround_s: object = .1) -> object:
+def calculate_deltaPes(triplet: object, inspiration_surround_s: object = .1, expiration_surround_s: object = .1) -> object:
     """
 
     Args:
@@ -162,15 +162,10 @@ def calculate_deltaPes(breath_filepath: object, inspiration_surround_s: object =
     Returns:
 
     """
-    # get breath file
-    triplet = pd.read_csv(breath_filepath)
 
     # set some variables for ease
     deliniation_column = 't:Fsp'
     esophogeal_manometry_column = 's:Pes'
-
-    # extract breath info
-    patient, day, breath = extract_breath_info(str(breath_filepath))
 
     # convert timerel column to datetime for calculations
     triplet['TimeRel'] = pd.to_datetime(triplet['TimeRel'])

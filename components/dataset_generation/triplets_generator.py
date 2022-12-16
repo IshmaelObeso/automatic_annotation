@@ -213,7 +213,7 @@ class Triplet_Generator:
         return triplet, triplet_csv_filename
 
     def calculate_deltaPes(self, triplet: pd.DataFrame, breath_id: int, subdir: str,
-                           deltaPes_list: list[list[float, str, str]], triplet_csv_filename: Path) -> tuple[pd.DataFrame, list[list[float, str, str]]]:
+                           deltaPes_list: list[list[float, str, str]]) -> tuple[pd.DataFrame, list[list[float, str, str]]]:
         """
         Calculates deltaPes of the central breath of the triplet and saves that information for later
 
@@ -231,7 +231,7 @@ class Triplet_Generator:
 
         # try to calculate deltaPes for the central breath in this triplet
         try:
-            deltaPes = deltaPes_utils.calculate_deltaPes(triplet_csv_filename)
+            deltaPes = deltaPes_utils.calculate_deltaPes(triplet)
         # if there is a problem calculating deltaPES, save deltaPES as NaN
         except:
             deltaPes = np.nan
@@ -382,10 +382,10 @@ class Triplet_Generator:
 
                 # calculate deltaPes
                 triplet, deltaPes_list = self.calculate_deltaPes(triplet,
-                                                                               breath_id,
-                                                                               subdir_name,
-                                                                               deltaPes_list,
-                                                                               triplet_csv_filename)
+                                                                 breath_id,
+                                                                 subdir_name,
+                                                                 deltaPes_list
+                                                                 )
                 # save triplet to csv
                 triplet.to_csv(triplet_csv_filename, index=False)
 
@@ -419,11 +419,12 @@ class Triplet_Generator:
         # for each subdir name in subdir names, get the results from each function call and append them to a list called results
         results = pqdm(subdir_names, self.loop_through_triplets, n_jobs=n_workers, desc='Patient-Days of Triplets Generated')
 
-        # put together all results
+        # put together results
+        patient_day_statics_list = [result[0] for result in results]
+
         # nested list comprehension (does .extend instead of .append essentially)
         # [variable_to_extend_with for OUTER LOOP (item in list) for INNER LOOP (variable_to_extend_with in list)]
-        patient_day_statics_list = [patient_day_statics_result for result in results for patient_day_statics_result in result[0]]
-        deltaPes_list = [result[1] for result in results]
+        deltaPes_list = [deltaPes_result for result in results for deltaPes_result in result[1]]
 
         # make sure patient_day_statics_list has something, aka. there is a patient day with triplets. if not interrupt and raise exception
         assert len(patient_day_statics_list) > 0, f'There must be patients in the dataset with triplets. None found, exiting'
