@@ -1,6 +1,10 @@
 from pathlib import Path
 
-""" This file contains information about models we want to use in our program, including paths, name, and output columns"""
+""" 
+
+This file contains information about models we want to use in our program, including paths, name, and output columns
+
+"""
 
 # model paths
 double_trigger_model = '.\\models\\double_trigger_model.onnx'

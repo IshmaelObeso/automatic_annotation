@@ -6,7 +6,7 @@ import argparse
 from datetime import datetime
 from pathlib import Path
 from components.dataset_generation.datacleaner import DataCleaner
-
+from typing import Union
 
 class Batch_Annotator:
 
@@ -38,7 +38,7 @@ class Batch_Annotator:
         self.export_directory = export_directory
         self.batch_processor_filepath = batch_processor_filepath
 
-    def _setup_directories(self, import_directory: str, export_directory: str, exe_path: str) -> tuple[Path, Path, Path]:
+    def _setup_directories(self, import_directory: Union[str, Path], export_directory: str, exe_path: str) -> tuple[Path, Path, Path]:
         """
 
         This method takes import_directory, export_directory, and exe_paths as strings, creates the export directory
@@ -198,7 +198,7 @@ class Batch_Annotator:
                     # move file
                     unstructured_file_name_path.rename(export_filepath)
 
-    def _batch_process(self, raw_files_directory: str, export_directory: str, batch_processor_filepath: str) -> Path:
+    def _batch_process(self, raw_files_directory: Union[str, Path], export_directory: str, batch_processor_filepath: str) -> Path:
         """
         This method runs the batch processing pipeline, creates batch csv, runs the batch processor, delete batch csv,
         move files to export directory, and organize files.
@@ -244,19 +244,16 @@ class Batch_Annotator:
         Returns:
             export_directory (Path): Path object that stores directory to store outputs
         """
-        # instantiate data cleaner
-        data_cleaner = DataCleaner()
 
         # batch process files
         export_directory = self._batch_process(self.raw_files_directory, self.export_directory, self.batch_processor_filepath)
 
-        ## check the batch files directory for errors
-
+        # check the batch files directory for errors
         # check for duplicate patient days
-        data_cleaner.check_for_duplicate_pt_days(export_directory)
+        DataCleaner.check_for_duplicate_pt_days(export_directory)
 
         # check for invalid directories
-        num_invalid, invalid_dir = data_cleaner.check_for_invalid_subdirs(export_directory)
+        num_invalid, invalid_dir = DataCleaner.check_for_invalid_subdirs(export_directory)
 
         # while the number of invalid files is greater than 0, run the batch processor over the invalid files to fix them
         while num_invalid > 0:
@@ -265,7 +262,7 @@ class Batch_Annotator:
             self._batch_process(invalid_dir, self.export_directory, self.batch_processor_filepath)
 
             # check the num invalid again
-            num_invalid, invalid_dir = data_cleaner.check_for_invalid_subdirs(export_directory)
+            num_invalid, invalid_dir = DataCleaner.check_for_invalid_subdirs(export_directory)
 
         # return export directory for other functions
         return export_directory

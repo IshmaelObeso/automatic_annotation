@@ -6,7 +6,7 @@ from components.dataset_generation.utilities import utils, deltaPes_utils
 from pqdm.processes import pqdm
 
 # define some complex types for typehints
-FilterFileInfo = dict[dict[str, bool], dict[str, str], dict[dict[str, str], dict[str, str]]]
+FilterFileInfo = dict[[str, bool], [str, str], dict[str, str], [str, str]]
 DeltaPesList = list[list[float, str, str]]
 
 
@@ -44,8 +44,8 @@ class TripletGenerator:
         self.triplet_export_directory = None
         self.statics_directory = None
 
-
-    def _setup_directories(self, batch_files_directory: Path) -> tuple[Path, Path, Path]:
+    @staticmethod
+    def _setup_directories(batch_files_directory: Path) -> tuple[Path, Path, Path]:
         """
         Sets up triplet_export_directory and statics_directory to store outputs from batch_files_directory path
         
@@ -74,7 +74,6 @@ class TripletGenerator:
         statics_directory.mkdir(parents=True, exist_ok=True)
 
         return batch_files_directory.resolve(), triplet_export_directory.resolve(), statics_directory.resolve()
-
 
     def _get_patient_day(self, subdir_name: str) -> tuple[str, str, Path, Path, pd.DataFrame]:
         """
@@ -109,7 +108,8 @@ class TripletGenerator:
 
         return patient_id, day_id, patient_day_dir, patient_day_output_dir, patient_day
 
-    def _create_dyssynchrony_mask(self, patient_day: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def _create_dyssynchrony_mask(patient_day: pd.DataFrame) -> pd.DataFrame:
         """
         Creates a mask to only select rows to search for dyssynchronies
         i.e. Only look for dyssynchronies between inspiration and expiration
@@ -135,7 +135,8 @@ class TripletGenerator:
 
         return patient_day
 
-    def _create_breath_ids(self, patient_day: pd.DataFrame) -> pd.DataFrame:
+    @staticmethod
+    def _create_breath_ids(patient_day: pd.DataFrame) -> pd.DataFrame:
         """
         Creates breath id's by looking at where expiration triggers occur, every time one occurs increase breath id by 1
 
@@ -155,7 +156,8 @@ class TripletGenerator:
 
         return patient_day
 
-    def _build_statics_file(self, patient_day: pd.DataFrame, patient_id: str, day_id: str, subdir_name: str) -> pd.DataFrame:
+    @staticmethod
+    def _build_statics_file(patient_day: pd.DataFrame, patient_id: str, day_id: str, subdir_name: str) -> pd.DataFrame:
         """
         Builds a statics DataFrame from a patient_day dataframe and information about that patient-day
 
@@ -181,7 +183,8 @@ class TripletGenerator:
 
         return patient_day_statics
 
-    def _build_triplet(self, patient_day: pd.DataFrame, patient_day_output_dir: Path, breath_id: int, one_hot_dyssynchronies: pd.DataFrame) -> tuple[pd.DataFrame, Path]:
+    @staticmethod
+    def _build_triplet(patient_day: pd.DataFrame, patient_day_output_dir: Path, breath_id: int, one_hot_dyssynchronies: pd.DataFrame) -> tuple[pd.DataFrame, Path]:
         """
         Builds a triplet DataFrame from a patient-day by taking the breaths surrounding the current breath_id,
          including the current breath
@@ -219,7 +222,8 @@ class TripletGenerator:
 
         return triplet, triplet_csv_filename
 
-    def _calculate_deltaPes(self, triplet: pd.DataFrame, breath_id: int, subdir: str,
+    @staticmethod
+    def _calculate_deltaPes(triplet: pd.DataFrame, breath_id: int, subdir: str,
                             deltaPes_list: DeltaPesList) -> tuple[pd.DataFrame, DeltaPesList]:
         """
         Calculates deltaPes of the central breath of the triplet and saves that information for later
@@ -254,7 +258,8 @@ class TripletGenerator:
 
         return triplet, deltaPes_list
 
-    def _add_deltaPes_to_statics(self, all_patient_day_statics: pd.DataFrame, deltaPes_list: DeltaPesList) -> pd.DataFrame:
+    @staticmethod
+    def _add_deltaPes_to_statics(all_patient_day_statics: pd.DataFrame, deltaPes_list: DeltaPesList) -> pd.DataFrame:
         """
         Adds deltaPes information to the statics file
 
@@ -323,7 +328,7 @@ class TripletGenerator:
                 all_patient_day_statics.filter(regex='^Double Trigger *', axis=1).sum(axis=1) == 1).astype(int)
 
         # put deltaPes information into statics file
-        all_patient_day_statics = self._add_deltaPes_to_statics(all_patient_day_statics, deltaPes_list)
+        all_patient_day_statics = TripletGenerator._add_deltaPes_to_statics(all_patient_day_statics, deltaPes_list)
 
         # save out statics files to triplets export directory
         all_patient_day_statics.to_hdf(Path(self.triplet_export_directory, 'statics.hdf'), key='statics')
@@ -351,16 +356,16 @@ class TripletGenerator:
         patient_id, day_id, patient_day_dir, patient_day_output_dir, patient_day = self._get_patient_day(subdir_name)
 
         # create dyssynchrony mask
-        patient_day = self._create_dyssynchrony_mask(patient_day)
+        patient_day = TripletGenerator._create_dyssynchrony_mask(patient_day)
 
         # create breath ids
-        patient_day = self._create_breath_ids(patient_day)
+        patient_day = TripletGenerator._create_breath_ids(patient_day)
 
         # Convert the time column to datetime format (be explicit with the format or it's slooowwwww)
         patient_day['TimeRel'] = pd.to_datetime(patient_day['TimeRel'], format='%H:%M:%S.%f')
 
         # setup statics file
-        patient_day_statics = self._build_statics_file(
+        patient_day_statics = TripletGenerator._build_statics_file(
             patient_day,
             patient_id,
             day_id,
@@ -381,13 +386,13 @@ class TripletGenerator:
 
             if breath_id not in breath_id_blacklist:
                 # create triplet
-                triplet, triplet_csv_filename = self._build_triplet(patient_day,
+                triplet, triplet_csv_filename = TripletGenerator._build_triplet(patient_day,
                                                                     patient_day_output_dir,
                                                                     breath_id,
                                                                     one_hot_dyssynchronies)
 
                 # calculate deltaPes
-                triplet, deltaPes_list = self._calculate_deltaPes(triplet,
+                triplet, deltaPes_list = TripletGenerator._calculate_deltaPes(triplet,
                                                                   breath_id,
                                                                   subdir_name,
                                                                   deltaPes_list
@@ -410,7 +415,7 @@ class TripletGenerator:
 
         """
         # setup directories
-        self.batch_files_directory, self.triplet_export_directory, self.statics_directory = self._setup_directories(self.batch_files_directory)
+        self.batch_files_directory, self.triplet_export_directory, self.statics_directory = TripletGenerator._setup_directories(self.batch_files_directory)
 
         # Grab the triplet folders from their directories
         p = Path(self.batch_files_directory)

@@ -1,183 +1,58 @@
 import tqdm
 import numpy as np
 import pandas as pd
-from pathlib import Path
 import shutil
-from components.dataset_generation.utilities import utils
 
+from pathlib import Path
+from components.dataset_generation.utilities import utils
+from typing import Union
+
+# define some complex types for typehints
+FilterFileInfo = dict[[str, bool], [str, str], dict[str, str], [str, str]]
 
 class DataCleaner:
     """
-    Class that catches and fixes errors in the pipe before they cause issues with the processor classes,
-     like the triplets class.
+    Catches and fixes errors in the pipe before they cause issues with the processor classes, like the triplets class.
+
+
     """
 
-    def __init__(self, filter_file_info: object = None, parent_directory: object = None) -> object:
+    def __init__(self, filter_file_info: FilterFileInfo = None, parent_directory: Path = None) -> None:
         """
+        Sets initial class attributes for use if this class gets called in a loop somewhere
 
         Args:
-            filter_file_info:
-            parent_directory:
+            filter_file_info (filter_file_info): dict that contains information about the filter file (if it is included), including
+                                what columns to filter over
+            parent_directory (Path): Path to the parent directory, where we will save the filter file if it exists
+
+        Returns:
+            None:
         """
-        # save info about filtered tripelts if given
+
+        # save info about filtered triplets if given
         self.filter_file_info = filter_file_info
 
         # if we want to use the filter file info, generate the pt days to exclude
         try:
-            if self.filter_file_info['use'] == True:
-                self.include_pt_days = self.get_include_pt_days(parent_directory)
+            if self.filter_file_info['use']:
+                self.include_pt_days = self._get_include_pt_days(parent_directory)
+
         # except if filter file info is None
         except TypeError:
             pass
 
-    def check_for_duplicate_pt_days(self, directory: object) -> object:
-
-        """
-        Function that checks directory for duplicate patient days,
-         then moves the duplicates into the duplicates directory and print out a message
-
-        :param directory: path to directory of patient days
-        :return:
-
-        Args:
-            directory:
-        """
-
-        # Grab all the folders from their directories
-        p = Path(directory)
-        subdir_names = [subdir.name for subdir in p.iterdir() if subdir.name not in utils.ERROR_DIRS]
-
-        # instantiate dictionary of pt days to subdir names
-        pt_day_dict = {}
-
-        # loop through each subdirectory
-        for subdir_name in tqdm.tqdm(subdir_names):
-
-            # get the patient and day id
-            patient_id = utils.get_patient_id(subdir_name)
-            day_id = utils.get_day_id(subdir_name)
-
-            # define patient_day
-            patient_day = (patient_id, day_id)
-
-            # if patient_day doesn't exist already, add it to dictionary
-            if patient_day not in pt_day_dict.keys():
-
-                pt_day_dict[patient_day] = [subdir_name]
-
-            elif patient_day in pt_day_dict.keys():
-
-                # if patient_day already exists, append subdir to key
-                pt_day_dict[patient_day].append(subdir_name)
-
-        # after looping through all directories, check if any pt_days have multiple subdirectories assigned
-        multi_pt_days = {k: v for (k, v) in pt_day_dict.items() if len(pt_day_dict[k]) > 1}
-
-        num_duplicates = len(multi_pt_days.keys())
-        # if duplicates are found
-        if num_duplicates > 0:
-            # move all duplicate subdirectories to duplicates directory
-            # setup duplicates subdir if duplicates are found
-            duplicates_subdir = Path(directory, 'duplicates')
-
-            duplicates_subdir.mkdir(parents=True, exist_ok=True)
-
-            # loop through all subdirectories that need to be moved
-            for subdirs in multi_pt_days.values():
-
-                # loop through all subdirectories
-                for subdir in subdirs:
-                    subdir_path = Path(directory, subdir)
-                    duplicates_path = Path(duplicates_subdir, subdir)
-                    shutil.move(subdir_path, duplicates_path)
-
-
-            # print that duplicates were found, and which ones
-            print(f'{num_duplicates} Duplicate patient days found! Moved to {duplicates_subdir}')
-        else:
-            print('No Duplicate Patient Days Found!')
-
-
-
-    def check_for_invalid_subdirs(self, directory: object) -> object:
-        """
-        Function that checks directory for a TriggersAndArtifacts file, if none is found move the directory
-        to the invalid directory and print out a message
-
-        :param directory: path to directory of patient days
-        :return:
-
-        Args:
-            directory:
-        """
-
-        # Grab all the folders from their directories
-        p = Path(directory)
-        subdir_names = [subdir.name for subdir in p.iterdir() if subdir.name not in utils.ERROR_DIRS]
-
-        # instantiate list of invalid subdirectories
-        invalid_subdirs = []
-
-        # loop through each subdirectory
-        for subdir_name in tqdm.tqdm(subdir_names):
-
-            # get all files in subdirectory
-            subdir_path = Path(directory, subdir_name)
-            subdir_files = [x.name for x in subdir_path.iterdir() if x.is_file()]
-
-
-            # look for a TriggersandArtifacts file
-            try:
-                ta_file_index = np.where([utils.TA_CSV_SUFFIX in csv for csv in subdir_files])[0][0]
-
-            # if not found, add subdir to invalid files
-            except:
-                invalid_subdirs.append(subdir_name)
-
-        num_invalid = len(invalid_subdirs)
-        # if invalid patient days are found
-        if num_invalid > 0 :
-            # after looping, move all invalid subdirectories into invalid directory
-            # setup invalid subdir
-            invalid_dir = Path(directory, 'invalid')
-            # if the invalid subdir exists already, delete it and its contents before remaking it and filling it
-            if invalid_dir.is_dir():
-                shutil.rmtree(invalid_dir)
-            # setup directory
-            invalid_dir.mkdir(parents=True, exist_ok=True)
-
-            # loop through all subdirectories that need to be moved
-            for invalid_subdir in invalid_subdirs:
-
-                # grab the files from those subdirectories and move them into the invalid folder
-                orig_invalid_subdir_path = Path(directory, invalid_subdir)
-                orig_invalid_file_paths = [f for f in orig_invalid_subdir_path.iterdir() if f.is_file()]
-
-                # move each file from subdir into invalid folder (There should only be 1 per folder, but loop just in case)
-                for orig_invalid_file_path in orig_invalid_file_paths:
-
-                    new_invalid_file_path = Path(invalid_dir, orig_invalid_file_path.name)
-                    shutil.move(orig_invalid_file_path, new_invalid_file_path)
-
-            # print that duplicats were found, and which ones
-            print(f'{num_invalid} patient days with no TriggersAndArtifacts File found! Moved to {invalid_dir}')
-
-            return num_invalid, invalid_dir
-
-         # else do nothing and print
-        else:
-            print('No patient days without TriggerAndArtifacts File Found!')
-            return num_invalid, None
-
-    def get_include_pt_days(self, parent_directory: object) -> object:
+    def _get_include_pt_days(self, parent_directory: Path) -> list[tuple[int, int]]:
         """
         This function takes the filter file info and saves a list of patient days to include in our dataset
 
         Args:
-            parent_directory:
+            parent_directory (Path): Path to the parent directory, where we will save the filter file if it exists
+
+        Returns:
+            list[tuple[int, int]]: list of patient-days to include in our dataset
 
         """
-
         # make sure filter filepath exists
         assert self.filter_file_info['filepath'] is not None, 'Filter file filepath must exist if use_filter_file = True'
 
@@ -240,16 +115,17 @@ class DataCleaner:
 
         return include_pt_days
 
-
-    def check_for_validity(self, subdir_name: object) -> object:
+    def check_for_validity(self, subdir_name: str) -> bool:
         """
-        Function that checks a breath to see if we should include it in our dataset
+        Function that checks a breath to see if we should include it in our dataset based on the filter file
 
         Args:
-            subdir_name:
+            subdir_name: string that stores the name of the patient-day subdirectory we are working with
+
+        Returns:
+            bool: True if we should keep breath, False if we should not keep breath
 
         """
-
         # get the patient_id, day_id, and breath_id of the triplet
         patient_id = utils.get_patient_id(subdir_name)
         day_id = utils.get_day_id(subdir_name)
@@ -279,6 +155,140 @@ class DataCleaner:
         else:
             return False
 
+    @staticmethod
+    def check_for_duplicate_pt_days(directory: Path) -> None:
+        """
+        Method that checks directory for duplicate patient days,
+        then moves the duplicates into the duplicates directory and print out a message
+
+        Args:
+            directory (Path): Path to the directory we want to check for duplicate patient-days
+
+        Returns:
+            None:
+        """
+
+        # Grab all the folders from their directories
+        p = Path(directory)
+        subdir_names = [subdir.name for subdir in p.iterdir() if subdir.name not in utils.ERROR_DIRS]
+
+        # instantiate dictionary of pt days to subdir names
+        pt_day_dict = {}
+
+        # loop through each subdirectory
+        for subdir_name in tqdm.tqdm(subdir_names):
+
+            # get the patient and day id
+            patient_id = utils.get_patient_id(subdir_name)
+            day_id = utils.get_day_id(subdir_name)
+
+            # define patient_day
+            patient_day = (patient_id, day_id)
+
+            # if patient_day doesn't exist already, add it to dictionary
+            if patient_day not in pt_day_dict.keys():
+
+                pt_day_dict[patient_day] = [subdir_name]
+
+            elif patient_day in pt_day_dict.keys():
+
+                # if patient_day already exists, append subdir to key
+                pt_day_dict[patient_day].append(subdir_name)
+
+        # after looping through all directories, check if any pt_days have multiple subdirectories assigned
+        multi_pt_days = {k: v for (k, v) in pt_day_dict.items() if len(pt_day_dict[k]) > 1}
+
+        num_duplicates = len(multi_pt_days.keys())
+        # if duplicates are found
+        if num_duplicates > 0:
+            # move all duplicate subdirectories to duplicates directory
+            # setup duplicates subdir if duplicates are found
+            duplicates_subdir = Path(directory, 'duplicates')
+
+            duplicates_subdir.mkdir(parents=True, exist_ok=True)
+
+            # loop through all subdirectories that need to be moved
+            for subdirs in multi_pt_days.values():
+
+                # loop through all subdirectories
+                for subdir in subdirs:
+                    subdir_path = Path(directory, subdir)
+                    duplicates_path = Path(duplicates_subdir, subdir)
+                    shutil.move(subdir_path, duplicates_path)
+
+            # print that duplicates were found, and which ones
+            print(f'{num_duplicates} Duplicate patient days found! Moved to {duplicates_subdir}')
+        else:
+            print('No Duplicate Patient Days Found!')
+
+    @staticmethod
+    def check_for_invalid_subdirs(directory: Path) -> tuple[int, Union[Path, None]]:
+        """
+        Method that checks directory for a TriggersAndArtifacts file, if none is found move the directory
+        to the invalid directory and print out a message
+
+        Args:
+            directory (Path): Path to the directory we want to check for duplicate patient-days
+
+        Returns:
+            None:
+
+        """
+        # Grab all the folders from their directories
+        p = Path(directory)
+        subdir_names = [subdir.name for subdir in p.iterdir() if subdir.name not in utils.ERROR_DIRS]
+
+        # instantiate list of invalid subdirectories
+        invalid_subdirs = []
+
+        # loop through each subdirectory
+        for subdir_name in tqdm.tqdm(subdir_names):
+
+            # get all files in subdirectory
+            subdir_path = Path(directory, subdir_name)
+            subdir_files = [x.name for x in subdir_path.iterdir() if x.is_file()]
 
 
-    
+            # look for a TriggersandArtifacts file
+            try:
+                ta_file_index = np.where([utils.TA_CSV_SUFFIX in csv for csv in subdir_files])[0][0]
+
+            # if not found, add subdir to invalid files
+            except:
+                invalid_subdirs.append(subdir_name)
+
+        num_invalid = len(invalid_subdirs)
+        # if invalid patient days are found
+        if num_invalid > 0:
+            # after looping, move all invalid subdirectories into invalid directory
+            # setup invalid subdir
+            invalid_dir = Path(directory, 'invalid')
+            # if the invalid subdir exists already, delete it and its contents before remaking it and filling it
+            if invalid_dir.is_dir():
+                shutil.rmtree(invalid_dir)
+            # setup directory
+            invalid_dir.mkdir(parents=True, exist_ok=True)
+
+            # loop through all subdirectories that need to be moved
+            for invalid_subdir in invalid_subdirs:
+
+                # grab the files from those subdirectories and move them into the invalid folder
+                orig_invalid_subdir_path = Path(directory, invalid_subdir)
+                orig_invalid_file_paths = [f for f in orig_invalid_subdir_path.iterdir() if f.is_file()]
+
+                # move each file from subdir into invalid folder (There should only be 1 per folder, but loop just in case)
+                for orig_invalid_file_path in orig_invalid_file_paths:
+
+                    new_invalid_file_path = Path(invalid_dir, orig_invalid_file_path.name)
+                    shutil.move(orig_invalid_file_path, new_invalid_file_path)
+
+            # print that duplicates were found, and which ones
+            print(f'{num_invalid} patient days with no TriggersAndArtifacts File found! Moved to {invalid_dir}')
+
+            return num_invalid, invalid_dir
+
+        # else do nothing and print
+        else:
+            print('No patient days without TriggerAndArtifacts File Found!')
+            return num_invalid, None
+

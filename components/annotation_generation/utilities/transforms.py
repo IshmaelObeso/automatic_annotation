@@ -1,12 +1,13 @@
 import numpy as np
 
 class ChopDatBreathRightOnUp:
-    '''
+    """
     Truncates x, y, & t to have sequence length == `max_length`. If the length
     is greater, takes the entire middle breath and takes (`max_length` - `middle breath length`) / 2 contiguous
     sequences from both the prior and subsequent breath. If the length is less, we left justify our window of size `max_length`
     and return that slice of the triplet.
-    Args:
+
+    Attributes:
         justification (str): Either 'left' (window starts at the first index of the middle breath)
                              or 'center' (window centered around the midpoint of the middle breath)
         max_length (int): Maximum sequence length to truncate to
@@ -14,16 +15,19 @@ class ChopDatBreathRightOnUp:
                       of the first index of the middle breath when justification='left'
                       and to the left of the center index of the middle breath when
                       justification='center'
-        jitter (int): Shift the entire window by a random number between -jitter / 2 and jitter / 2 ONLY IN TRAINING
-    '''
+    """
 
-    def __init__(self, justification: object = 'left', max_length: object = 900, offset: object = 300) -> object:
+    def __init__(self, justification: str = 'left', max_length: int = 900, offset: int = 300) -> None:
         """
+        Sets initial class attributes
 
         Args:
-            justification:
-            max_length:
-            offset:
+            justification (str): whether to justify left or center of breath
+            max_length (int): max amount of spectral columns to include in tensor
+            offset (int): amount of offset to the left
+
+        Returns:
+            None:
         """
         # set attributes
         if justification not in ['left', 'center']:
@@ -33,18 +37,21 @@ class ChopDatBreathRightOnUp:
         self.max_length = max_length
         self.offset = offset
 
-    def forward(self, xs: object, ys: object, ts: object, uid: object) -> object:
+    def forward(self, xs: np.array, ys: np.array, ts: np.array, uid: tuple[str, str, int]) -> tuple[np.array, np.array, np.array, tuple[str, str, int]]:
         """
+        Applies transform to triplet, centers window on central triplet, applies maximum length, justification, and offset
 
         Args:
-            xs:
-            ys:
-            ts:
-            uid:
+            xs (np.array): spectral data for breath
+            ys (np.array): truth for breath
+            ts (np.array): timesteps of breath
+            uid (tuple[str, str, int]): uid of breath
 
         Returns:
+            tuple[np.array, np.array, np.array, tuple[str, str, int]]: returns xs, ys, ts, uid after being transformed
 
         """
+
         # Get the indices of all the non-nan y values
         non_nan_ys = np.where(~np.isnan(ys))[0]
 
