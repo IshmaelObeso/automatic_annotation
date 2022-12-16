@@ -235,7 +235,8 @@ class Data_Cleaner:
         include_pt_days = all_pt_days.difference(exclude_pt_days).tolist()
 
         # save filter file we used to our directory
-        filtering_file.to_csv(Path(parent_directory, 'filter_file.csv'))
+        filtering_file.to_excel(Path(parent_directory, 'filter_file_excel.xlsx'))
+        filtering_file.to_csv(Path(parent_directory, 'filter_file_csv.csv'))
 
         return include_pt_days
 

@@ -32,7 +32,7 @@ class Batch_Annotator:
         Returns:
             None:
         """
-        # setup directories
+        # save attributes
         self.raw_files_directory = raw_files_directory
         self.export_directory = export_directory
         self.batch_processor_filepath = batch_processor_filepath

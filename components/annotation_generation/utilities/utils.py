@@ -1,7 +1,7 @@
 import multiprocessing as mp
 
 
-def num_workers(multiprocessing: object = False) -> object:
+def num_workers(multiprocessing: bool = False) -> int:
     """
 
     Args:

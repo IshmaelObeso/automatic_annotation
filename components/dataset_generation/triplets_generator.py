@@ -1,12 +1,14 @@
 import pandas as pd
 import numpy as np
 import argparse
-import warnings
 from pathlib import Path
 from components.dataset_generation.utilities import utils, deltaPes_utils
 from pqdm.processes import pqdm
 
+FilterFileInfo = dict[dict[str, bool], dict[str, str], dict[dict[str, str], dict[str, str]]]
+
 class Triplet_Generator:
+
     ''' This Class carries out all functions of the triplet generator.
 
         Inputs:
@@ -19,26 +21,35 @@ class Triplet_Generator:
 
         '''
 
-    def __init__(self, batch_files_directory: object, filter_file_info: object = None) -> object:
+    def __init__(self, batch_files_directory: Path, filter_file_info: FilterFileInfo = None) -> None:
         """
+        Sets initial class attributes
 
         Args:
-            batch_files_directory:
-            filter_file_info:
-        """
-        # # setup import and export directories
-        self.batch_files_directory, self.triplet_export_directory, self.statics_directory = self.setup_directories(batch_files_directory)
-        # save filter file info
-        self.filter_file_info = filter_file_info
-
-
-    def setup_directories(self, batch_files_directory: object) -> object:
-        """
-
-        Args:
-            batch_files_directory:
+            batch_files_directory: Path object that stores path to the batch files directory, where outputs from
+                                   the batch processor are stored
+            filter_file_info: dict that contains information about the filter file, including which columns to filter over
 
         Returns:
+            None:
+        """
+
+        # save attributes
+        self.batch_files_directory = batch_files_directory
+        self.filter_file_info = filter_file_info
+
+    def setup_directories(self, batch_files_directory: Path) -> tuple[Path, Path, Path]:
+        """
+        Sets up triplet_export_directory and statics_directory to store outputs from batch_files_directory path
+        
+        Args:
+            batch_files_directory (Path): Path object that stores path to the batch files directory, where outputs from
+                                          the batch processor are stored
+
+        Returns:
+            (tuple(Path, Path, Path)): returns Paths of batch_files_directory, triplet_export_directory,
+                                       statics_directory as Path objects for easy manipulation
+
 
         """
         # define paths
@@ -58,15 +69,19 @@ class Triplet_Generator:
         return batch_files_directory.resolve(), triplet_export_directory.resolve(), statics_directory.resolve()
 
 
-    def get_patient_day(self, subdir_name: object) -> object:
+    def get_patient_day(self, subdir_name: str) -> tuple[str, str, Path, Path, pd.DataFrame]:
         """
-
+        Gets the patient-day from a subdirectory name
+        
         Args:
-            subdir_name:
+            subdir_name (str): string of subdirectory name (patient-day subdirectory)
 
         Returns:
+            tuple[str, str, Path, Path, pd.DataFrame]: tuple with patient_id, day_id, patient_day_dir,
+                                                       patient_day_output_dir, patient_day stored in it
 
         """
+        
         # get the patient and day id
         patient_id = utils.get_patient_id(subdir_name)
         day_id = utils.get_day_id(subdir_name)
@@ -87,15 +102,20 @@ class Triplet_Generator:
 
         return patient_id, day_id, patient_day_dir, patient_day_output_dir, patient_day
 
-    def create_dyssynchrony_mask(self, patient_day: object) -> object:
+    def create_dyssynchrony_mask(self, patient_day: pd.DataFrame) -> pd.DataFrame:
         """
+        Creates a mask to only select rows to search for dyssynchronies
+        i.e. Only look for dyssynchronies between inspiration and expiration
 
         Args:
-            patient_day:
+            patient_day (pd.Dataframe): DataFrame with waveform information, inspiration and expiration triggers,
+                                        and dyssynchrony information about the patient-day
 
         Returns:
+            pd.DataFrame: Patient-day dataframe with added dyssynchrony_mask column
 
         """
+
         # Create a mask to select only rows in which I should search for dyssynchronies
         # By creating column where rows between inspiration trigger (1) and expiration trigger (-1)
         # are equal to 1, which will be used for filtering
@@ -108,34 +128,43 @@ class Triplet_Generator:
 
         return patient_day
 
-    def create_breath_ids(self, patient_day: object) -> object:
+    def create_breath_ids(self, patient_day: pd.DataFrame) -> pd.DataFrame:
         """
+        Creates breath id's by looking at where expiration triggers occur, every time one occurs increase breath id by 1
+
 
         Args:
-            patient_day:
+            patient_day (pd.DataFrame): DataFrame with waveform information, inspiration and expiration triggers,
+                                        and dyssynchrony information about the patient-day
 
         Returns:
+            pd.DataFrame: Patient-day dataframe with breath_ids included
 
         """
+
         # Create breath ids by replacing expiration triggers
         patient_day['breath_id'] = patient_day[utils.DELINEATION_COLUMN].replace(-1, 0)
         patient_day['breath_id'] = patient_day['breath_id'].cumsum()
 
         return patient_day
 
-    def build_statics_file(self, patient_day: object, patient_id: object, day_id: object, patient_day_statics_list: object, subdir_name: object) -> object:
+    def build_statics_file(self, patient_day: pd.DataFrame, patient_id: str, day_id: str, subdir_name: str) -> pd.DataFrame:
         """
+        Builds a statics DataFrame from a patient_day dataframe and information about that patient-day
 
         Args:
-            patient_day:
-            patient_id:
-            day_id:
-            patient_day_statics_list:
-            subdir_name:
+            patient_day (pd.DataFrame): DataFrame with waveform information, inspiration and expiration triggers,
+                                        and dyssynchrony information about the patient-day
+            patient_id (str): string of the patient day id
+            day_id (str): string of the day id
+            subdir_name (str): string of subdirectory name (patient-day subdirectory)
 
         Returns:
+            pd.DataFrame: Built statics file with summary information about the patient-day.
+                          Has columns with info about dyssynchrony counts in this patient-day
 
         """
+
         # Build the statics file, creating ID columns for the patient and day based on the filename
         patient_day_statics = utils.create_breath_statics(patient_day)
 
@@ -143,23 +172,25 @@ class Triplet_Generator:
         patient_day_statics['day_id'] = day_id
         patient_day_statics['original_subdirectory'] = subdir_name
 
-        # Stack the statics files (they'll be merged once the loop ends)
-        patient_day_statics_list.append(patient_day_statics)
+        return patient_day_statics
 
-        return patient_day_statics, patient_day_statics_list
-
-    def build_triplet(self, patient_day: object, patient_day_output_dir: object, breath_id: object, one_hot_dyssynchronies: object) -> object:
+    def build_triplet(self, patient_day: pd.DataFrame, patient_day_output_dir: Path, breath_id: int, one_hot_dyssynchronies: pd.DataFrame) -> tuple[pd.DataFrame, Path]:
         """
+        Builds a triplet DataFrame from a patient-day by taking the breaths surrounding the current breath_id,
+         including the current breath
 
         Args:
-            patient_day:
-            patient_day_output_dir:
-            breath_id:
-            one_hot_dyssynchronies:
+            patient_day (pd.DataFrame): DataFrame with waveform information, inspiration and expiration triggers,
+                                        and dyssynchrony information about the patient-day
+            patient_day_output_dir (Path): Path to output directory for this patient-day triplet
+            breath_id (int): string of breath id for this triplet
+            one_hot_dyssynchronies (pd.DataFrame): Dataframe with dyssynchronies one-hot-encoded in columns
 
         Returns:
+            tuple[pd.DataFrame, Path]: Returns triplet dataframe and  path to where the triplet csv should be saved
 
         """
+
         # Take the breath before, current breath and breath after as a triplet
         triplet = patient_day[patient_day['breath_id'].isin([breath_id - 1,
                                                              breath_id,
@@ -179,55 +210,58 @@ class Triplet_Generator:
         triplet_csv_filename = Path(patient_day_output_dir,
                                     'breath_{}.csv'.format(breath_id))
 
-        # Save to csv
-        triplet.to_csv(triplet_csv_filename, index=False)
-
         return triplet, triplet_csv_filename
 
-    def calculate_deltaPes(self, triplet: object, breath_id: object, subdir: object, deltaPes_list: object, triplet_csv_filename: object) -> object:
+    def calculate_deltaPes(self, triplet: pd.DataFrame, breath_id: int, subdir: str,
+                           deltaPes_list: list[list[float, str, str]], triplet_csv_filename: Path) -> tuple[pd.DataFrame, list[list[float, str, str]]]:
         """
+        Calculates deltaPes of the central breath of the triplet and saves that information for later
 
         Args:
-            triplet:
-            breath_id:
-            subdir:
-            deltaPes_list:
-            triplet_csv_filename:
+            triplet (pd.DataFrame): DataFrame with information about the triplet
+            breath_id (int): string of breath id of this triplet
+            subdir (str): string of subdirectory where triplet should be stored
+            deltaPes_list (list[list[float, str, str]]): list of breaths that have deltaPes recorded, and information about those breaths
+            triplet_csv_filename (Path): Path object that stores the path to where the triplet csv file should be stored
 
         Returns:
+            tuple[pd.DataFrame, list[list[float, str, str]]]: returns triplet and deltaPes_list with deltaPes information added
 
         """
+
+        # try to calculate deltaPes for the central breath in this triplet
         try:
             deltaPes = deltaPes_utils.calculate_deltaPes(triplet_csv_filename)
         # if there is a problem calculating deltaPES, save deltaPES as NaN
         except:
-            # print(f'\nError Calculating DeltaPES for pt {utils.get_patient_id(subdir)}, day {utils.get_day_id(subdir)}, breath {breath_id} saving deltaPES as NaN')
             deltaPes = np.nan
 
         deltaPes_list.append([deltaPes, subdir, breath_id])
 
-        # import pdb; pdb.set_trace()
-
         # get binary truth for deltaPES, 0 if <20, 1 if >= 20
-        deltaPes_binary = int(deltaPes>=20)
+        deltaPes_binary = int(deltaPes >= 20)
 
+        # save deltaPes information in the triplet dataframe
         triplet['deltaPes'] = deltaPes
         triplet['deltaPes_binary'] = deltaPes_binary
         triplet['deltaPes_clipped'] = triplet['deltaPes'].clip(upper=40)
 
         return triplet, deltaPes_list
 
-    def add_deltaPes_to_statics(self, all_patient_day_statics: object, deltaPes_list: object) -> object:
+    def add_deltaPes_to_statics(self, all_patient_day_statics: pd.DataFrame, deltaPes_list: list[list[float, str, str]]) -> pd.DataFrame:
         """
+        Adds deltaPes information to the statics file
 
         Args:
-            all_patient_day_statics:
-            deltaPes_list:
-            has_deltaPes:
+            all_patient_day_statics (pd.DataFrame): DataFrame with summary information (statics) about all patient-days
+                                                    in the dataset
+            deltaPes_list (list[list[float, str, str]]): list of all triplets in the dataset that have deltaPes calculated
 
         Returns:
+            pd.DataFrame: Dataframe of all_patient_days_statics with deltaPes information added
 
         """
+
         merge_columns = ['original_subdirectory', 'breath_id']
 
         # Save this to restore the index after the merge
@@ -240,7 +274,7 @@ class Triplet_Generator:
                                                                               how='left',
                                                                               on=merge_columns).set_index(statics_index)
 
-        # threshhold deltaPes, values above 40 will be clipped to 40
+        # threshold deltaPes, values above 40 will be clipped to 40
         all_patient_day_statics['deltaPes_clipped'] = all_patient_day_statics['deltaPes'].clip(upper=40)
 
         # binarize deltaPES in the statics file
@@ -249,12 +283,16 @@ class Triplet_Generator:
 
         return all_patient_day_statics
 
-    def create_final_statics(self, patient_day_statics_list: object, deltaPes_list: object) -> object:
+    def create_final_statics(self, patient_day_statics_list: list[list[float, str, str]], deltaPes_list: list[list[float, str, str]]) -> None:
         """
+        Concantenates all the patient_day statics DataFrames into one large dataframe for all patient-days in the dataset
 
         Args:
-            patient_day_statics_list:
-            deltaPes_list:
+            patient_day_statics_list (list[list[float, str, str]]): list of all triplets that have a statics file made for them
+            deltaPes_list (list[list[float, str, str]]): list of all triplets in the dataset that have deltaPes calculated
+
+        Returns:
+            None:
         """
 
         all_patient_day_statics = pd.concat(patient_day_statics_list)
@@ -268,7 +306,7 @@ class Triplet_Generator:
             patient_id_col='patient_id',
             day_id_col='day_id')
 
-        # For mutliclass classification of the underlying double trigger dyssynchronies,
+        # For multiclass classification of the underlying double trigger dyssynchronies,
         # we need an indicator of where there is a double trigger without an underlying dyssynchrony
         # to filter these out in split_train_val_test.py.
 
@@ -289,22 +327,18 @@ class Triplet_Generator:
         all_patient_day_statics.to_hdf(Path(self.statics_directory, 'statics.hdf'), key='statics')
         all_patient_day_statics.to_csv(Path(self.statics_directory, 'statics.csv'))
 
-    def loop_through_triplets(self, subdir_name: object) -> object:
+    def loop_through_triplets(self, subdir_name: str) -> tuple[pd.DataFrame, list[list[float, str, str]]]:
         """
+        Loops through all triplets in a patient-day, saves them, and then returns information about deltaPes and statics for inclusion in the final statics
 
         Args:
-            subdir_name:
+            subdir_name (str): string of subdirectory where triplet should be stored
 
         Returns:
+            tuple[pd.DataFrame, list[list[float, str, str]]]: Returns patient_day_statics and deltaPes_list
 
         """
-        # Here's where we'll accumulate all the individual statics files within the loop
-        patient_day_statics_list = []
-
-        # a list to idenfiy which breaths actually had a deltaPes calculated
-        has_deltaPes = []
-
-        # a temporary list of detlaPes calculations per breath
+        # a temporary list of deltaPes calculations per breath
         deltaPes_list = []
 
         # get the patient day and set up patient_day directories
@@ -320,11 +354,10 @@ class Triplet_Generator:
         patient_day['TimeRel'] = pd.to_datetime(patient_day['TimeRel'], format='%H:%M:%S.%f')
 
         # setup statics file
-        patient_day_statics, patient_day_statics_list = self.build_statics_file(
+        patient_day_statics = self.build_statics_file(
             patient_day,
             patient_id,
             day_id,
-            patient_day_statics_list,
             subdir_name
         )
 
@@ -336,12 +369,6 @@ class Triplet_Generator:
         # Get dyssynchrony columns, so that the one hot columns span the entire triplet,
         # we will merge within the next loop
         one_hot_dyssynchronies = utils.one_hot_dyssynchronies(patient_day)
-
-        # check number of breaths. if num_breaths <3, output a warning (no triplet can be created with <3 breaths)
-        num_breaths = patient_day['breath_id'].max()
-        # warning won't interrupt program, but will let user know
-        # if num_breaths < 3:
-        #     print(f'Patient {patient_id}, Day {day_id} has less than 3 breaths, no triplets created.\n Recommend exclude from dataset')
 
         # Loop through each breath
         for breath_id in range(1, patient_day['breath_id'].max()):
@@ -359,19 +386,26 @@ class Triplet_Generator:
                                                                                subdir_name,
                                                                                deltaPes_list,
                                                                                triplet_csv_filename)
+                # save triplet to csv
+                triplet.to_csv(triplet_csv_filename, index=False)
 
         # return first element in these lists, with multithreading there will only be one item per list
-        return patient_day_statics_list[0], deltaPes_list[0]
+        return patient_day_statics, deltaPes_list
 
-    def generate_triplets(self, multiprocessing: object = False) -> object:
+    def generate_triplets(self, multiprocessing: bool = False) -> Path:
         """
+        Creates triplets in parallel (if flag is true), then saves them out and creates a statics file for them.
 
         Args:
-            multiprocessing:
+            multiprocessing (bool): Boolean flag whether to multiprocess or not
 
         Returns:
+            Path: returns path to the directory where we saved all our triplets
 
         """
+        # setup directories
+        self.batch_files_directory, self.triplet_export_directory, self.statics_directory = self.setup_directories(self.batch_files_directory)
+
         # Grab the triplet folders from their directories
         p = Path(self.batch_files_directory)
         subdir_names = [subdir.name for subdir in p.iterdir() if subdir.name not in utils.ERROR_DIRS]
@@ -385,19 +419,11 @@ class Triplet_Generator:
         # for each subdir name in subdir names, get the results from each function call and append them to a list called results
         results = pqdm(subdir_names, self.loop_through_triplets, n_jobs=n_workers, desc='Patient-Days of Triplets Generated')
 
-        # initialize empty lists to build
-        patient_day_statics_list = []
-        deltaPes_list = []
-
         # put together all results
-        for result in results:
-            # each result has structure [patient_day_statics_list, delta_pes_list, has_deltaPes]
-            # if there is no result, because there are not >= 3 breaths, skip that result
-            try:
-                patient_day_statics_list.append(result[0])
-                deltaPes_list.append(result[1])
-            except:
-                continue
+        # nested list comprehension (does .extend instead of .append essentially)
+        # [variable_to_extend_with for OUTER LOOP (item in list) for INNER LOOP (variable_to_extend_with in list)]
+        patient_day_statics_list = [patient_day_statics_result for result in results for patient_day_statics_result in result[0]]
+        deltaPes_list = [result[1] for result in results]
 
         # make sure patient_day_statics_list has something, aka. there is a patient day with triplets. if not interrupt and raise exception
         assert len(patient_day_statics_list) > 0, f'There must be patients in the dataset with triplets. None found, exiting'
@@ -407,7 +433,7 @@ class Triplet_Generator:
 
         return self.triplet_export_directory
 
-# if running this file directly, only do do triplet generation
+# if running this file directly, only do triplet generation
 if __name__ == "__main__":
 
     # Command Line Arguments

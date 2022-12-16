@@ -162,9 +162,9 @@ def get_artifact_blacklist(patient_day: object, num_breaths: object = 3, breath_
     return np.unique(artifact_blacklist + context_blacklist).tolist()
 
 
-def get_breath_length_blacklist(patient_day: object, num_breaths: object = 3, min_length: object = 0.25, max_length: object = 10.0,
-                                time_col: object = 'TimeRel',
-                                breath_id_col: object = 'breath_id') -> object:
+def get_breath_length_blacklist(patient_day: pd.DataFrame, num_breaths: int = 3, min_length: float = 0.25, max_length: float = 10.0,
+                                time_col: str = 'TimeRel',
+                                breath_id_col: str = 'breath_id') -> list[int]:
     '''
     Identify breaths that are either too long or too short to be considered.
 
@@ -196,8 +196,8 @@ def get_breath_length_blacklist(patient_day: object, num_breaths: object = 3, mi
                      too_long_context_blacklist).tolist()
 
 
-def one_hot_dyssynchronies(patient_day: object, breath_id_col: object = 'breath_id', dyssynchrony_mask_col: object = 'dyssynchrony_mask',
-                           min_breath_fraction: object = 0.75) -> object:
+def one_hot_dyssynchronies(patient_day: pd.DataFrame, breath_id_col: str = 'breath_id', dyssynchrony_mask_col: str = 'dyssynchrony_mask',
+                           min_breath_fraction: float = 0.75) -> pd.DataFrame:
     '''
     Given the list of dyssynchrony codes, create a column for each and
     assign the entire breath 1 if the disynchrony's present and 0 if not.
@@ -280,7 +280,7 @@ def one_hot_dyssynchronies(patient_day: object, breath_id_col: object = 'breath_
     return full_one_hot_df
 
 
-def one_hot_artifacts(patient_day: object, breath_id_col: object = 'breath_id') -> object:
+def one_hot_artifacts(patient_day: pd.DataFrame, breath_id_col: str = 'breath_id') -> pd.DataFrame:
     '''
     Given the list of artifact codes, create a column for each and
     assign the entire breath 1 if the artifact's present and 0 if not.
@@ -306,8 +306,8 @@ def one_hot_artifacts(patient_day: object, breath_id_col: object = 'breath_id') 
     return full_one_hot_df
 
 
-def create_breath_statics(patient_day: object, num_breaths: object = 3, min_length: object = 0.25, max_length: object = 10.0, time_col: object = 'TimeRel',
-                          breath_id_col: object = 'breath_id') -> object:
+def create_breath_statics(patient_day: pd.DataFrame, num_breaths: int = 3, min_length: float = 0.25, max_length: float = 10.0, time_col: str = 'TimeRel',
+                          breath_id_col: str = 'breath_id') -> pd.DataFrame:
     '''
     Create a statics file for each breath that contains the following columns:
         - Breath ID
@@ -347,7 +347,7 @@ def create_breath_statics(patient_day: object, num_breaths: object = 3, min_leng
     return statics
 
 
-def get_patient_id(filename: object) -> object:
+def get_patient_id(filename: str) -> str:
     '''
     Extract the patient ID from a filename using regex.
     '''
@@ -362,7 +362,7 @@ def get_patient_id(filename: object) -> object:
     return re.findall(patient_id_pattern, filename, flags=re.IGNORECASE)[0]
 
 
-def get_day_id(filename: object) -> object:
+def get_day_id(filename: str) -> str:
     '''
     Extract the day ID from a filename using regex.
     '''
@@ -491,7 +491,7 @@ def create_cooccurrence_column_via_and(statics: object, cooccurrence_col: object
 
     return statics
 
-def num_workers(multiprocessing: object = False) -> object:
+def num_workers(multiprocessing: bool = False) -> int:
     """
 
     Args:

@@ -64,8 +64,6 @@ class Spectral_Triplet_Generator:
         # create directory for statics files
         statics_directory = Path(triplets_parent_directory, 'statics')
 
-
-
         spectral_triplet_export_directory.mkdir(parents=True, exist_ok=True)
         statics_directory.mkdir(parents=True, exist_ok=True)
 
@@ -278,10 +276,6 @@ class Spectral_Triplet_Generator:
         triplet_subdir, spectral_triplet_subdir, triplet_csv_file_names = self.setup_spectral_subdirectories(
             subdir_name)
 
-        # get the patient and day id
-        patient_id = utils.get_patient_id(subdir_name)
-        day_id = utils.get_day_id(subdir_name)
-
         for triplet_csv_file_name in triplet_csv_file_names:
 
             # initialize spectral triplet
@@ -300,16 +294,9 @@ class Spectral_Triplet_Generator:
             self.save_spectral_triplet(tensor_and_truth, triplet, spectral_tensor, spectral_triplet_subdir,
                                        triplet_csv_file_name)
 
-        # if there are elements in keep_triplets, (if there are there should only be one), then return that element, otherwise return the empty list
-        if len(keep_triplets) > 0:
-            keep_triplets = keep_triplets[0]
-        # do the same for has_spectral_triplet
-        if len(has_spectral_triplet) > 0:
-            has_spectral_triplet = has_spectral_triplet[0]
-
         return has_spectral_triplet, keep_triplets
 
-    def generate_spectral_triplets(self, multiprocessing: object = False) -> object:
+    def generate_spectral_triplets(self, multiprocessing: bool = False) -> Path:
         """
 
         Args:
@@ -318,6 +305,7 @@ class Spectral_Triplet_Generator:
         Returns:
 
         """
+
         # Grab the triplet folders from their directories
         p = Path(self.triplet_directory)
         subdir_names = [subdir.name for subdir in p.iterdir() if subdir.is_dir()]
@@ -331,15 +319,11 @@ class Spectral_Triplet_Generator:
         # for each subdir name in subdir names, get the results from each function call and append them to a list called results
         results = pqdm(subdir_names, self.loop_through_spectral_triplets, n_jobs=n_workers, desc='Patient-Days of Spectral Triplets Generated')
 
-        # initialize empty lists to build
-        has_spectral_triplet = []
-        keep_triplets = []
-
         # put together all results
-        for result in results:
-            # each result has structure [patient_day_statics_list, delta_pes_list, has_deltaPes]
-            has_spectral_triplet.append(result[0])
-            keep_triplets.append(result[1])
+        # nested list comprehension (does .extend instead of .append essentially)
+        # [variable_to_extend_with for OUTER LOOP (item in list) for INNER LOOP (variable_to_extend_with in list)]
+        has_spectral_triplet = [has_spectral_triplet_result for result in results for has_spectral_triplet_result in result[0]]
+        keep_triplets = [keep_triplets_result for result in results for keep_triplets_result in result[1]]
 
         # after looping through every triplets file, finalize the statics file and save it out
         self.finalize_statics(has_spectral_triplet, keep_triplets)

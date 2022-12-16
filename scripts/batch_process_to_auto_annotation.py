@@ -172,7 +172,7 @@ if __name__ == "__main__":
     args = vars(p.parse_args())
 
     # define args
-    raw_files_directory = args['import_directory']
+    raw_files_directory = args['raw_files_directory']
     export_directory = args['export_directory']
     batch_processor_exe_filepath = args['batch_processor_exe_filepath']
     use_filter_file = args['use_filter_file']
