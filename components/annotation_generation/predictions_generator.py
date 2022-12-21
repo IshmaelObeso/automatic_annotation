@@ -152,11 +152,11 @@ class PredictionGenerator:
         xs = np.reshape(xs, self.input_shape)
 
         # get prediction
-        pred = self.model.session.run([self.output_name], {self.input_name: xs.astype(np.float32)})
+        pred = self.model.run([self.output_name], {self.input_name: xs.astype(np.float32)})
         # get prediction as a singular array
         pred = pred[0][0]
 
-        # get the max of truth ie. was there a dyssynchrony in this triplet or not
+        # get the max of truth i.e. was there a dyssynchrony in this triplet or not
         ys = np.nan_to_num(ys).max(axis=0)
 
         # save truth and preds as dataframes

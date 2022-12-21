@@ -108,7 +108,7 @@ def main(
             for model_name, parameters in MODELS_DICT.items():
 
                 # grab model path from dict and instantiate
-                model_object = annotation_model.Annotation_Model(parameters['path'])
+                model_object = annotation_model.AnnotationModel(parameters['path'])
 
                 # save model object in dict
                 MODELS_DICT[model_name]['model_object'] = model_object

@@ -14,6 +14,11 @@ class DataCleaner:
     """
     Catches and fixes errors in the pipe before they cause issues with the processor classes, like the triplets class.
 
+    Attributes:
+        filter_file_info (FilterFileInfo): dict that contains information about the filter file (if it is included), including
+                                what columns to filter over
+        parent_directory (Path): Path to the parent directory, where we will save the filter file if it exists
+        include_pt_days (list[tuple[int, int]]): list of patient days to include in the dataset
 
     """
 
@@ -32,6 +37,7 @@ class DataCleaner:
 
         # save info about filtered triplets if given
         self.filter_file_info = filter_file_info
+        self.parent_directory = parent_directory
 
         # if we want to use the filter file info, generate the pt days to exclude
         try:
