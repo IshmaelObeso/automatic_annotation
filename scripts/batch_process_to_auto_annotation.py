@@ -85,8 +85,7 @@ def main(
         triplet_generator = triplets_generator.TripletGenerator(batch_export_directory)
 
         # run triplet generator
-        triplet_export_directory = triplet_generator.generate_triplets(multiprocessing)
-        triplet_statics_directory = triplet_generator.statics_directory
+        triplet_export_directory, triplet_statics_directory = triplet_generator.generate_triplets(multiprocessing)
 
         print(f'Triplets generated at {os.path.abspath(triplet_export_directory)}')
         print(f"Statics file generated at {os.path.abspath(triplet_statics_directory)}")
@@ -95,8 +94,7 @@ def main(
         spectral_triplet_generator = spectral_triplets_generator.SpectralTripletGenerator(triplet_export_directory, filter_file_info=filter_file_info)
 
         # run spectral triplet generator
-        spectral_triplets_export_directory = spectral_triplet_generator.generate_spectral_triplets(multiprocessing)
-        spectral_statics_directory = spectral_triplet_generator.statics_directory
+        spectral_triplets_export_directory, spectral_statics_directory = spectral_triplet_generator.generate_spectral_triplets(multiprocessing)
 
         print(f'Spectral Triplets generated at {os.path.abspath(spectral_triplets_export_directory)}')
         print(f"Spectral Statics file generated at {os.path.abspath(spectral_statics_directory)}")
@@ -126,7 +124,7 @@ def main(
             annotation_generator.create_art_files(predictions_df, models_dict=MODELS_DICT)
 
             # add multitarget predictions to artifact files
-            print(f'Annotated Dataset Created at {annotation_generator.annotated_dataset_directory}')
+            print(f'Annotated Dataset Created at {annotation_generator._annotated_dataset_directory}')
 
     # finally delete triplets and spectral triplets directory if cleanup is selected
     if generate_triplets_and_statics and delete_triplets_and_spectral_triplets:

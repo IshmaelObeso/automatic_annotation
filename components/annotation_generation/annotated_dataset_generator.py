@@ -3,36 +3,49 @@ import shutil
 import itertools
 from components.dataset_generation.utilities import utils
 from pathlib import Path
+from typing import Union
+
 
 class AnnotatedDatasetGenerator:
+    """
+    Generates a dataset of raw patient files with their corresponding annotations inside an artifact file
 
-    """ Class that generates a dataset of raw patient
-     files with their corresponding annotations inside an artifact file"""
+     Attributes:
 
 
-    def __init__(self, raw_files_directory: object, spectral_triplets_directory: object) -> object:
+
+    """
+
+    def __init__(self, raw_files_directory: Union[str, Path], spectral_triplets_directory: Union[str, Path]) -> None:
         """
+        Sets initial class attributes
 
         Args:
-            raw_files_directory:
-            spectral_triplets_directory:
+            raw_files_directory (Union[str, Path]): Path to directory where raw patient-day files are stored
+            spectral_triplets_directory (Union[str, Path]): Path to directory where spectral triplets are stored
         """
+
         # setup directories
-        self.annotated_dataset_directory,\
-        self.raw_files_directory,\
-        self.spectral_triplets_directory,\
-        self.spectral_statics_filepath = self.setup_directories(raw_files_directory, spectral_triplets_directory)
+        self._raw_files_directory = raw_files_directory
+        self._spectral_triplets_directory = spectral_triplets_directory
+        self._annotated_dataset_directory = None
+        self._spectral_statics_filepath = None
 
-    def setup_directories(self, raw_files_directory: object, spectral_triplets_directory: object) -> object:
+    @staticmethod
+    def _setup_directories(raw_files_directory: Union[str, Path], spectral_triplets_directory: Union[str, Path]) -> tuple[Path, Path, Path]:
         """
+        Sets up annotated_dataset_directory, raw_files_directory, and spectral_statics_filepath
 
         Args:
-            raw_files_directory:
-            spectral_triplets_directory:
+            raw_files_directory (Union[str, Path]): Path to directory where raw patient-day files are stored
+            spectral_triplets_directory (Union[str, Path]): Path to directory where spectral triplets are stored
 
         Returns:
-
+            annotated_dataset_directory (Path): Path to directory where we will save our .art files
+            raw_files_directory (Path): Path to directory where raw patient-day files are stored
+            spectral_statics_filepath (Path): Path to spectral statics file
         """
+
         # define paths
         raw_files_directory = Path(raw_files_directory.replace('"', '').replace("'", ''))
         spectral_triplets_directory = Path(spectral_triplets_directory)
@@ -46,34 +59,25 @@ class AnnotatedDatasetGenerator:
         # get the spectral triplet statics file path
         spectral_statics_filepath = Path(spectral_triplets_directory, 'spectral_statics.csv')
 
-        return annotated_dataset_directory.resolve(),\
-               raw_files_directory.resolve(),\
-               spectral_triplets_directory.resolve(),\
+        return annotated_dataset_directory.resolve(), \
+               raw_files_directory.resolve(), \
                spectral_statics_filepath.resolve()
 
-
-    def save_predictions(self, predictions_df: object) -> object:
-        """ saves the raw predictions dataframe into csv and hdf
-
-        Args:
-            predictions_df:
+    @staticmethod
+    def _get_breath_times(predictions_df: pd.DataFrame, spectral_statics_filepath: Path) -> pd.DataFrame:
         """
-
-        # Write the statics file
-        predictions_df.to_hdf(self.predictions_output_path_hdf, key='statics')
-        predictions_df.to_csv(self.predictions_output_path_csv)
-
-
-    def get_breath_times(self, predictions_df: object) -> object:
-
-        """ gets start and expiration times of breaths with associated predictions
+        Gets start and expiration times of breaths with associated predictions
 
         Args:
-            predictions_df:
+            predictions_df (pd.DataFrame): DataFrame with predictions from model
+            spectral_statics_filepath (Path): Path to spectral statics file
+
+        Returns:
+            predictions_df (pd.DataFrame): DataFrame with predictions from model with breath timings added
         """
 
         # load spectral statics file
-        spectral_statics = pd.read_csv(self.spectral_statics_filepath)
+        spectral_statics = pd.read_csv(spectral_statics_filepath)
         # convert columns to string
         spectral_statics[['patient_id', 'day_id']] = spectral_statics[['patient_id', 'day_id']].astype(str)
         # set index for statics
@@ -89,25 +93,36 @@ class AnnotatedDatasetGenerator:
         spectral_statics['start_time'] = pd.to_datetime(spectral_statics['start_time'])
         spectral_statics['end_time'] = pd.to_datetime(spectral_statics['end_time'])
 
-        spectral_statics['start_time'] = spectral_statics['start_time'].dt.second + (spectral_statics['start_time'].dt.minute * 60) + (spectral_statics['start_time'].dt.hour * 3600) + ((spectral_statics['start_time'].dt.day -1) * 86400)
-        spectral_statics['end_time'] = spectral_statics['end_time'].dt.second + (spectral_statics['end_time'].dt.minute * 60) + (spectral_statics['end_time'].dt.hour * 3600) + ((spectral_statics['end_time'].dt.day - 1) * 86400)
+        spectral_statics['start_time'] = spectral_statics['start_time'].dt.second + (
+                    spectral_statics['start_time'].dt.minute * 60) + (spectral_statics['start_time'].dt.hour * 3600) + (
+                                                     (spectral_statics['start_time'].dt.day - 1) * 86400)
+        spectral_statics['end_time'] = spectral_statics['end_time'].dt.second + (
+                    spectral_statics['end_time'].dt.minute * 60) + (spectral_statics['end_time'].dt.hour * 3600) + (
+                                                   (spectral_statics['end_time'].dt.day - 1) * 86400)
 
         # merge with preds df
         predictions_df = pd.concat([predictions_df, spectral_statics], axis=1)
 
         return predictions_df
 
-
-    def copy_raw_files(self, predictions_df: object) -> object:
-
-        """ Copies raw files from raw files directory to annotated dataset directory,
-         only copies raw files that we have predictions for
+    @staticmethod
+    def _copy_raw_files(predictions_df: pd.DataFrame, raw_files_directory: Path, annotated_dataset_directory: Path) -> list[Union[str, Path]]:
+        """
+        Copies raw files from raw files directory to annotated dataset directory,
+        only copies raw files that we have predictions for
 
         Args:
-            predictions_df: """
+            predictions_df (pd.DataFrame): DataFrame with predictions from model with breath timings added
+            raw_files_directory (Path): Path to directory where raw patient-day files are stored
+            annotated_dataset_directory (Path): Path to directory where we will save our .art files
+
+        Returns:
+            patient_day_files_with_predictions (list[Union[str, Path]]): List of patient-day files we have predictions for
+
+        """
 
         # grab all csv files from raw directory
-        raw_csv_files = list(self.raw_files_directory.glob('*.csv'))
+        raw_csv_files = list(raw_files_directory.glob('*.csv'))
 
         # get all patient_days that we have predictions for
         patient_days = predictions_df.index.droplevel(2)
@@ -132,26 +147,34 @@ class AnnotatedDatasetGenerator:
 
         # copy all patient day files that we have predictions for into new annotated dataset directory
         for patient_day_file in patient_day_files_with_predictions:
-
             # define desired filepath
-            new_patient_day_filepath = Path(self.annotated_dataset_directory, patient_day_file.name)
+            new_patient_day_filepath = Path(annotated_dataset_directory, patient_day_file.name)
+
             # copy file
             shutil.copy(patient_day_file, new_patient_day_filepath)
 
         return patient_day_files_with_predictions
 
-    def create_art_files(self, predictions_df: object, models_dict: object) -> object:
-
-        """ creates artifact files for every patient day we have predictions for from the binary predictions, and adds multitarget predictions if there is a multitarget prediction file
+    def create_art_files(self, predictions_df: pd.DataFrame, models_dict: dict) -> None:
+        """
+        Creates artifact files for every patient day we have predictions for from the binary predictions,
+        and adds multitarget predictions if there is a multitarget prediction file
 
         Args:
-            predictions_df:
-            models_dict:
+            predictions_df (pd.DataFrame): DataFrame with predictions from model
+            models_dict (dict): Dictionary with information about models is stored
         """
+
+        # setup directories
+        annotated_dataset_directory, \
+            raw_files_directory, \
+            spectral_statics_filepath = AnnotatedDatasetGenerator._setup_directories(self._raw_files_directory,
+                                                                                     self._spectral_triplets_directory)
 
         # get a list of all patient day files that we have predictions for and copy any raw patient day files we have
         # predictions for into the annotated dataset directory
-        patient_day_files_with_predictions = self.copy_raw_files(predictions_df)
+        patient_day_files_with_predictions = AnnotatedDatasetGenerator._copy_raw_files(predictions_df, raw_files_directory,
+                                                                  annotated_dataset_directory)
 
         # get a list of all output column names, if model is being used
         output_columns = []
@@ -164,7 +187,7 @@ class AnnotatedDatasetGenerator:
         output_columns = list(itertools.chain(*output_columns))
 
         # merge breath times into the predictions dataframe
-        predictions_df = self.get_breath_times(predictions_df)
+        predictions_df = AnnotatedDatasetGenerator._get_breath_times(predictions_df, spectral_statics_filepath)
 
         # for every patient day we have predictions for
         for patient_day_file in patient_day_files_with_predictions:
@@ -182,7 +205,7 @@ class AnnotatedDatasetGenerator:
             pt_day_preds = predictions_df.loc[pt_day]
 
             # get filepath to the new dataset directory with patient_day_filename
-            patient_day_filepath = Path(self.annotated_dataset_directory, patient_day_file.name)
+            patient_day_filepath = Path(annotated_dataset_directory, patient_day_file.name)
 
             # build an artifacts file for that patient day
             artifacts_filepath = patient_day_filepath.with_suffix('.art')
@@ -193,10 +216,9 @@ class AnnotatedDatasetGenerator:
             pt_day_preds_dyssynchrony_index = []
             # for every threshold column
             for threshold_column in threshold_columns:
-
                 # grab indexes of rows where there are detections in the threshold column,
                 # turn index to list, and add it to the existing list of rows where there are detections
-                pt_day_preds_dyssynchrony_index.extend(pt_day_preds[pt_day_preds[threshold_column]==1].index.tolist())
+                pt_day_preds_dyssynchrony_index.extend(pt_day_preds[pt_day_preds[threshold_column] == 1].index.tolist())
 
             # turn list of indexes to one index, drop duplicates, and sort
             pt_day_preds_dyssynchrony_index = pd.Index(pt_day_preds_dyssynchrony_index).drop_duplicates().sort_values()
@@ -214,7 +236,7 @@ class AnnotatedDatasetGenerator:
                     # grab the columns and row that correspond to this breath
                     detected_classes = pt_day_preds.loc[index, threshold_columns]
                     # find which of the classes we are using were detected if any
-                    detected_classes = detected_classes.loc[(detected_classes==1)].index.to_list()
+                    detected_classes = detected_classes.loc[(detected_classes == 1)].index.to_list()
 
                     ## Now we write the logic to annotate the breaths based on the detected classes for that breath
 
@@ -271,7 +293,7 @@ class AnnotatedDatasetGenerator:
                     # if multiple classes passed threshold, find the class with the largest raw prediction and use that
                     if len(detected_classes) > 1:
 
-                        # variables to keep track of largest prediction and its asynchrony code
+                        # variables to keep track of the largest prediction and its asynchrony code
                         largest_pred = 0
                         dyssynchrony_code = '0'
                         channel_code = '0'
@@ -293,12 +315,3 @@ class AnnotatedDatasetGenerator:
                         line = f'{begin},{end},{channel_code},{dyssynchrony_code}\n'
                         # first write the double trigger line
                         file.write(line)
-
-
-
-
-
-
-
-
-

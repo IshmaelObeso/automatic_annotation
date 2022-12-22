@@ -15,10 +15,10 @@ class DataCleaner:
     Catches and fixes errors in the pipe before they cause issues with the processor classes, like the triplets class.
 
     Attributes:
-        filter_file_info (FilterFileInfo): dict that contains information about the filter file (if it is included), including
+        _filter_file_info (FilterFileInfo): dict that contains information about the filter file (if it is included), including
                                 what columns to filter over
-        parent_directory (Path): Path to the parent directory, where we will save the filter file if it exists
-        include_pt_days (list[tuple[int, int]]): list of patient days to include in the dataset
+        _parent_directory (Path): Path to the parent directory, where we will save the filter file if it exists
+        _include_pt_days (list[tuple[int, int]]): list of patient days to include in the dataset
 
     """
 
@@ -36,13 +36,13 @@ class DataCleaner:
         """
 
         # save info about filtered triplets if given
-        self.filter_file_info = filter_file_info
-        self.parent_directory = parent_directory
+        self._filter_file_info = filter_file_info
+        self._parent_directory = parent_directory
 
         # if we want to use the filter file info, generate the pt days to exclude
         try:
-            if self.filter_file_info['use']:
-                self.include_pt_days = self._get_include_pt_days(parent_directory)
+            if self._filter_file_info['use']:
+                self._include_pt_days = self._get_include_pt_days(parent_directory)
 
         # except if filter file info is None
         except TypeError:
@@ -56,21 +56,20 @@ class DataCleaner:
             parent_directory (Path): Path to the parent directory, where we will save the filter file if it exists
 
         Returns:
-            list[tuple[int, int]]: list of patient-days to include in our dataset
-
+            include_pt_days (list[tuple[int, int]]): list of patient-days to include in our dataset
         """
         # make sure filter filepath exists
-        assert self.filter_file_info['filepath'] is not None, 'Filter file filepath must exist if use_filter_file = True'
+        assert self._filter_file_info['filepath'] is not None, 'Filter file filepath must exist if use_filter_file = True'
 
         # get the filepath to csv filter file
-        csv_filepath = self.filter_file_info['filepath']
+        csv_filepath = self._filter_file_info['filepath']
         # turn info Path object if not already
         csv_filepath = Path(csv_filepath)
         # load csv into dataframe
         filtering_file = pd.read_excel(csv_filepath, engine='openpyxl')
 
         # get the columns and values we should filter over
-        columns_and_exclude_values = self.filter_file_info['exclude_columns_and_values']
+        columns_and_exclude_values = self._filter_file_info['exclude_columns_and_values']
         # this dictionary must have values if the 'use' variable is true
         assert len(
             columns_and_exclude_values), 'If filtering with csv file, must include columns to check and values to exclude'
@@ -140,13 +139,13 @@ class DataCleaner:
         patient_day = (int(patient_id), int(day_id))
 
         # check if filter file info exists, it always should. if not return false for every triplet
-        if self.filter_file_info is not None:
+        if self._filter_file_info is not None:
 
             # check if we should filter out breaths
-            if self.filter_file_info['use']:
+            if self._filter_file_info['use']:
 
                 # now check if the pt day we are checking should be included in the dataset
-                if patient_day in self.include_pt_days:
+                if patient_day in self._include_pt_days:
 
                     return True
 

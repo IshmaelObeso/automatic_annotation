@@ -48,7 +48,10 @@ class ChopDatBreathRightOnUp:
             uid (tuple[str, str, int]): uid of breath
 
         Returns:
-            tuple[np.array, np.array, np.array, tuple[str, str, int]]: returns xs, ys, ts, uid after being transformed
+            xs (np.ndarray): transformed spectral data for breath
+            ys (np.ndarray): transformed truth for breath
+            ts (np.ndarray): transformed timesteps of breath
+            uid (tuple[str, str, int]): transformed uid of breath
 
         """
 

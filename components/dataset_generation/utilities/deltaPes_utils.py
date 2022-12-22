@@ -11,7 +11,9 @@ def get_inspiration_expiration_triggers(triplet: pd.DataFrame, deliniation_colum
         deliniation_column (str): column that contains information on triggers
 
     Returns:
-        tuple[pd.Index, pd.Index, pd.Index]: Returns index objects of inspiration triggers, expiration triggers, and all triggers
+        inspiration_triggers (pd.Index): Indexes of inspiration triggers
+        expiration_triggers (pd.Index) Indexes of expiration triggers
+        all_triggers (pd.Index) Indexes of all triggers
     """
 
     # get index of inspiration and expiration triggers
@@ -32,8 +34,8 @@ def left_and_right_current_inspiration_idxs(triplet: pd.DataFrame, inspiration_t
         inspiration_surround_s (float): time in seconds around the inspiration trigger to get index of
 
     Returns:
-        tuple[pd.Index, pd.Index]: Returns current_inspiration_left_index index corresponding to inspiration_trigger-inspiration surround
-                                    and current_inspiration_right_index index corresponding to inspiration_trigger+inspiration_surround
+        current_inspiration_left_index (pd.Index): Index corresponding to inspiration_trigger-inspiration surround
+        current_inspiration_right_index (pd.Index): Index corresponding to inspiration_trigger+inspiration_surround
     """
 
     # get index 100ms before second inspiration trigger
@@ -64,7 +66,10 @@ def get_ymax(triplet: pd.DataFrame, esophogeal_manometry_column: str, current_in
         current_inspiration_right_index (pd.Index): index corresponding to inspiration_trigger+inspiration_surround
 
     Returns:
-        tuple[pd.Index, pd.Index]: Returns the value and index of the highest value of the esophageal manometry channel
+        current_inspiration_ymax (float): Value of the highest value of the esophageal manometry channel between the
+                                          current_inspiration_left_index and current_inspiration_right_index
+        current_inspiration_ymax_idx (pd.Index): Index of the highest value of the esophageal manometry channel between
+                                                 the current_inspiration_left_index and current_inspiration_right_index
     """
 
     # find ymax in the range 100ms around second inspiration trigger
@@ -82,14 +87,14 @@ def left_and_right_current_expiration_idxs(triplet: pd.DataFrame, inspiration_tr
 
     Args:
         triplet (pd.DataFrame): DataFrame of a triplet
-        inspiration_triggers (pd.Index): Indexs of inspiration triggers
+        inspiration_triggers (pd.Index): Indexes of inspiration triggers
         expiration_triggers (pd.Index): Indexes of expiration triggers
         ymax_idx (pd.Index): index of the ymax around the second inspiration trigger
         expiration_surround_s (float): how many seconds around the expiration trigger to save the index
 
     Returns:
-        tuple[pd.Index, pd.Index]: Returns current_expiration_left_index index corresponding to expiration_trigger-expiration_surround_s surround
-                                    and current_expiration_right_index index corresponding to expiration_trigger+expiration_surround_s
+        current_expiration_left_index (pd.Index): Index corresponding to expiration_trigger-expiration_surround_s
+        current_expiration_right_index (pd.Index): Index corresponding to expiration_trigger+expiration_surround_s
     """
 
     # get index 100ms before second expiration trigger
@@ -128,7 +133,10 @@ def get_ymin(triplet: pd.DataFrame, esophogeal_manometry_column: str, current_ex
         current_expiration_right_index (pd.Index): index corresponding to expiration_trigger+expiration_surround_s
 
     Returns:
-        tuple[float, pd.Index]: Returns value of ymin and index of ymin
+        current_expiration_ymin (float): Value of the lowest value of the esophageal manometry channel in the range
+                            from current inspiration trigger to expiration_surround_s after current expiration trigger
+        current_expiration_ymin_idx (pd.Index): Index of the lowest value of the esophageal manometry channel in the
+                        range from current inspiration trigger to expiration_surround_s after current expiration trigger
     """
 
     # find ymin in the range from current inspiration trigger to 100ms after current expiration trigger
@@ -150,7 +158,7 @@ def calculate_deltaPes(triplet: pd.DataFrame, inspiration_surround_s: float = .1
         expiration_surround_s (float): how many seconds around the expiration trigger to include in calculations
 
     Returns:
-        float: Returns float of calculated deltaPes value
+        deltaPes (float): Returns float of calculated deltaPes value
     """
 
     # set some variables for ease

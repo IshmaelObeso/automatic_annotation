@@ -14,9 +14,9 @@ class Batch_Annotator:
         organized directory of batch processed patient-day files
 
     Attributes:
-        raw_files_directory (str): directory where raw patient-day files are stored
-        export_directory (str): directory to store outputs
-        batch_processor_filepath (str): filepath to the batch processor .exe
+        _raw_files_directory (str): directory where raw patient-day files are stored
+        _export_directory (str): directory to store outputs
+        _batch_processor_filepath (str): filepath to the batch processor .exe
 
     '''
 
@@ -33,10 +33,11 @@ class Batch_Annotator:
         Returns:
             None:
         """
+
         # save attributes
-        self.raw_files_directory = raw_files_directory
-        self.export_directory = export_directory
-        self.batch_processor_filepath = batch_processor_filepath
+        self._raw_files_directory = raw_files_directory
+        self._export_directory = export_directory
+        self._batch_processor_filepath = batch_processor_filepath
 
     def _setup_directories(self, import_directory: Union[str, Path], export_directory: str, exe_path: str) -> tuple[Path, Path, Path]:
         """
@@ -46,15 +47,16 @@ class Batch_Annotator:
         the export directory path to point to the batch_outputs folder in the export directory
 
         Args:
-            import_directory (str): directory where raw patient-day files are stored
+            import_directory (Union[str, Path]): directory where raw patient-day files are stored
             export_directory (str): directory to store outputs
             exe_path (str): filepath to the batch processor .exe
 
         Returns:
-            tuple[Path, Path, Path]: returns Paths of import_directory, export_directory, exe_path as Path objects for
-                                    easy manipulation
-
+            import_directory (Path): Path to directory where raw patient-day files are stored
+            export_directory (Path): Path to directory to store outputs
+            exe_path (Path): Path to filepath to the batch processor .exe
         """
+        
         # define paths
         import_directory = Path(import_directory.replace('"', '').replace("'", ''))
         export_directory = Path(export_directory.replace('"', '').replace("'", ''))
@@ -246,7 +248,7 @@ class Batch_Annotator:
         """
 
         # batch process files
-        export_directory = self._batch_process(self.raw_files_directory, self.export_directory, self.batch_processor_filepath)
+        export_directory = self._batch_process(self._raw_files_directory, self._export_directory, self._batch_processor_filepath)
 
         # check the batch files directory for errors
         # check for duplicate patient days
@@ -259,7 +261,7 @@ class Batch_Annotator:
         while num_invalid > 0:
 
             # batch process files
-            self._batch_process(invalid_dir, self.export_directory, self.batch_processor_filepath)
+            self._batch_process(invalid_dir, self._export_directory, self._batch_processor_filepath)
 
             # check the num invalid again
             num_invalid, invalid_dir = DataCleaner.check_for_invalid_subdirs(export_directory)
